@@ -1,0 +1,6 @@
+server:
+  port: 8083
+spring:
+  data:
+    mongodb:
+      uri: mongodb://cowork_group:123456@localhost:27018/cowork_group?authSource=admin&authMechanism=SCRAM-SHA-1

@@ -1,0 +1,2757 @@
+{
+	"info": {
+		"_postman_id": "db17ed0c-35ef-4dde-920f-f9698bd1f945",
+		"name": "CoWork",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "oauth",
+			"item": [
+				{
+					"name": "/oauth/token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"token\", jsonData.data.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "cowork",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "cowork",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "username",
+									"value": "admin",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "cowork",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "cowork",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/oauth/token",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/oauth/signup",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "test1",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "test1",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "test1@test.com",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/oauth/signup",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"oauth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/oauth/reset",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "test",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "test",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "1234",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/oauth/reset",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"oauth",
+								"reset"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "user",
+			"item": [
+				{
+					"name": "/user",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "http://{{host}}/user",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "nickname",
+									"value": "test",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "test",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "test@test.com",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/user",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/user/{id}",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "http://{{host}}/user/60290d8a01dbd67bdd5f2ad3",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"user",
+								"60290d8a01dbd67bdd5f2ad3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/user/search",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/user/search?n=test",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"user",
+								"search"
+							],
+							"query": [
+								{
+									"key": "n",
+									"value": "test"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/user/list",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"60290d8a01dbd67bdd5f2ad3\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{host}}/user/list",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"user",
+								"list"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "group",
+			"item": [
+				{
+					"name": "/group",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "http://{{host}}/group",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "研发部",
+									"type": "text"
+								},
+								{
+									"key": "describe",
+									"value": "大家好，这里是研发部！",
+									"type": "text"
+								},
+								{
+									"key": "memberRole",
+									"value": "Create",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/group",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/search",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "did",
+									"value": "602923a34900db17f08617ab",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/group/search?name=部",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "部"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/user",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/apply",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/apply",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"apply"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/apply",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "did",
+									"value": "602923a34900db17f08617ab",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/group/apply",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"apply"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "uid",
+									"value": "60140b3a957ba2290cb0b15b",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/group/user",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/exit",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/exit",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"exit"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/user/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/user/606c27aa68da984577564684",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"user",
+								"606c27aa68da984577564684"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/count",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/count",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "测试3",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/group/doc",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/606b18a84916cf19a5b9f47e",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"606b18a84916cf19a5b9f47e"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/606b18a84916cf19a5b9f47e",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"606b18a84916cf19a5b9f47e"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/{id}/content",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/602924fb64fadf4bad2e1a37/content",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"602924fb64fadf4bad2e1a37",
+								"content"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/search",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/search?title=测试",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"search"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "测试"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/trash/count",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/trash/count",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"trash",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/trash",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/trash",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"trash"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/trash/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/trash/602924fb64fadf4bad2e1a37",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"trash",
+								"602924fb64fadf4bad2e1a37"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/trash/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/trash/602924fb64fadf4bad2e1a37",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"trash",
+								"602924fb64fadf4bad2e1a37"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/group/doc/trash/search",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/group/doc/trash/search?title=测试",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"doc",
+								"trash",
+								"search"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "测试"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "admin",
+			"item": [
+				{
+					"name": "/admin/user/count",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/user/count",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"user",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/user",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "test",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "test",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "test@test.com",
+									"type": "text"
+								},
+								{
+									"key": "role",
+									"value": "0",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/user",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/user/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "test",
+									"type": "text"
+								},
+								{
+									"key": "nickname",
+									"value": "测试用户",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "test",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "test@test.com",
+									"type": "text"
+								},
+								{
+									"key": "role",
+									"value": "Normal",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/user/60292360786fa61295fd82a5",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"user",
+								"60292360786fa61295fd82a5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/user/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/user/60292360786fa61295fd82a5",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"user",
+								"60292360786fa61295fd82a5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/user/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/user/5ff855651f60183643529f28",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"user",
+								"5ff855651f60183643529f28"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/count",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/group/count",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/search",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/group/search?n=部",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"search"
+							],
+							"query": [
+								{
+									"key": "n",
+									"value": "部"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/group",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "研发部",
+									"type": "text"
+								},
+								{
+									"key": "leader",
+									"value": "60292360786fa61295fd82a5",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/group",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/group/602923a34900db17f08617ab",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"602923a34900db17f08617ab"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "研发部",
+									"type": "text"
+								},
+								{
+									"key": "describe",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "leader",
+									"value": "60292360786fa61295fd82a5",
+									"type": "text"
+								},
+								{
+									"key": "memberRole",
+									"value": "Create",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/group/602923a34900db17f08617ab",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"602923a34900db17f08617ab"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/group/602923a34900db17f08617ab",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"602923a34900db17f08617ab"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/{id}/user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/group/602923a34900db17f08617ab/user",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"602923a34900db17f08617ab",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/{id}/user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "uid",
+									"value": "60292360786fa61295fd82a5",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/group/602923a34900db17f08617ab/user",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"602923a34900db17f08617ab",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/{id}/user/{uid}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/group/602923a34900db17f08617ab/user/5ff855651f60183643529f28",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"602923a34900db17f08617ab",
+								"user",
+								"5ff855651f60183643529f28"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/{id}/doc",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/group/602923a34900db17f08617ab/doc?s=10&p=0",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"602923a34900db17f08617ab",
+								"doc"
+							],
+							"query": [
+								{
+									"key": "s",
+									"value": "10"
+								},
+								{
+									"key": "p",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/{id}/doc",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "did",
+									"value": "602924fb64fadf4bad2e1a37",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/group/602923a34900db17f08617ab/doc",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"602923a34900db17f08617ab",
+								"doc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/group/{id}/doc/{did}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/group/602923a34900db17f08617ab/doc/602924fb64fadf4bad2e1a37",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"group",
+								"602923a34900db17f08617ab",
+								"doc",
+								"602924fb64fadf4bad2e1a37"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/doc/count",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/doc/count",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"doc",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/doc",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/doc",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"doc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/doc",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "测试",
+									"type": "text"
+								},
+								{
+									"key": "owner",
+									"value": "60292360786fa61295fd82a5",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/doc",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"doc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/doc/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/doc/602924fb64fadf4bad2e1a37",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"doc",
+								"602924fb64fadf4bad2e1a37"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/doc/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "测试",
+									"type": "text"
+								},
+								{
+									"key": "owner",
+									"value": "5ff855651f60183643529f28",
+									"type": "text"
+								},
+								{
+									"key": "url",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "delete",
+									"value": "false",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/admin/doc/602924fb64fadf4bad2e1a37",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"doc",
+								"602924fb64fadf4bad2e1a37"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/doc/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/doc/602924fb64fadf4bad2e1a37",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"doc",
+								"602924fb64fadf4bad2e1a37"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/doc/{id}/content",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/doc/602924fb64fadf4bad2e1a37/content",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"doc",
+								"602924fb64fadf4bad2e1a37",
+								"content"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/doc/find",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/doc/find?owner=60292360786fa61295fd82a5",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"doc",
+								"find"
+							],
+							"query": [
+								{
+									"key": "owner",
+									"value": "60292360786fa61295fd82a5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/doc/statistic",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/admin/doc/statistic",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"admin",
+								"doc",
+								"statistic"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "doc",
+			"item": [
+				{
+					"name": "/doc/count",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/count",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "论实施",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/doc",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/6029250464fadf4bad2e1a38",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"6029250464fadf4bad2e1a38"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "测试文档a",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/doc/6029250464fadf4bad2e1a38",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"6029250464fadf4bad2e1a38"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/602925bf64fadf4bad2e1a39",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"602925bf64fadf4bad2e1a39"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/{id}/url",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "permission",
+									"value": "ReadWrite",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/doc/6029250464fadf4bad2e1a38/url",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"6029250464fadf4bad2e1a38",
+								"url"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/url/{url}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/url/cd4dfea7454b4df69b654425d6551361",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"url",
+								"cd4dfea7454b4df69b654425d6551361"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/{id}/content",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/6029250464fadf4bad2e1a38/content",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"6029250464fadf4bad2e1a38",
+								"content"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/search",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/search?title=测试",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"search"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "测试"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/star",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/star",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"star"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/trash/count",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/trash/count",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"trash",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/trash",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/trash",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"trash"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/trash/{id}",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/trash/60366b11b308ce0c9ab089fb",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"trash",
+								"60366b11b308ce0c9ab089fb"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/trash/{id}",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/trash/60366b11b308ce0c9ab089fb",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"trash",
+								"60366b11b308ce0c9ab089fb"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/trash/search",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/trash/search?title=测试",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"trash",
+								"search"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "测试"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/image",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/Users/shiroyk/Downloads/_hd/2.jpg.jpg"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}/doc/image",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"image"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/image",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/image/a31ab8c5-2de4-47c8-a5e0-5e9c756ee769",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"image",
+								"a31ab8c5-2de4-47c8-a5e0-5e9c756ee769"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": "token"
+		},
+		{
+			"key": "host",
+			"value": "localhost:8079"
+		}
+	]
+}

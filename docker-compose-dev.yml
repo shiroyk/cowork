@@ -1,0 +1,63 @@
+version: "3.4"
+services:
+  db-user-dev:
+    image: mongo:latest
+    restart: on-failure
+    container_name: db-user-dev
+    environment:
+      MONGO_INITDB_DATABASE: cowork_user
+      MONGO_INITDB_ROOT_USERNAME: cowork_user
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    volumes:
+      - ./cowork-user/src/main/resources/init-user.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    ports:
+      - 27017:27017
+  db-group-dev:
+    image: mongo:latest
+    restart: on-failure
+    container_name: db-group-dev
+    environment:
+      MONGO_INITDB_DATABASE: cowork_group
+      MONGO_INITDB_ROOT_USERNAME: cowork_group
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    volumes:
+      - ./cowork-group/src/main/resources/init-group.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    ports:
+      - 27018:27017
+  db-doc-dev:
+    image: mongo:latest
+    restart: on-failure
+    container_name: db-doc-dev
+    environment:
+      MONGO_INITDB_DATABASE: cowork_doc
+      MONGO_INITDB_ROOT_USERNAME: cowork_doc
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    volumes:
+      - ./cowork-doc/src/main/resources/init-doc.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    ports:
+      - 27019:27017
+  cowork-redis-dev:
+    image: redis:latest
+    container_name: cowork-redis-dev
+    restart: on-failure
+    command: redis-server --requirepass password
+    mem_limit: 64M
+    ports:
+      - 6379:6379
+  cowork-zookeeper-dev:
+    image: wurstmeister/zookeeper
+    container_name: cowork-zookeeper-dev
+    restart: on-failure
+    mem_limit: 64M
+  cowork-kafka-dev:
+    image: wurstmeister/kafka
+    restart: on-failure
+    mem_limit: 256M
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: localhost
+      KAFKA_ZOOKEEPER_CONNECT: cowork-zookeeper-dev:2181
+    depends_on:
+      - cowork-zookeeper-dev
+    container_name: cowork-kafka-dev
+    ports:
+      - 9092:9092

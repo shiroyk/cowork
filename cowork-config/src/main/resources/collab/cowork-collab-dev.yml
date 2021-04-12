@@ -1,0 +1,37 @@
+server:
+  port: 8085
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8081/rsa/key
+  cloud:
+    stream:
+      default-binder: kafka
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+        msg-out:
+          binder: kafka
+          destination: msg
+        msg-input:
+          binder: kafka
+          destination: msg
+        cursor-out:
+          binder: kafka
+          destination: cursor
+        cursor-input:
+          binder: kafka
+          destination: cursor
+        crdt-out:
+          binder: kafka
+          destination: crdt
+        crdt-input:
+          binder: kafka
+          destination: crdt
+  redis:
+    host: localhost
+    port: 6379
+    password: password

@@ -1,0 +1,288 @@
+version: "3.4"
+services:
+  cowork-eureka:
+    build:
+      context: ./cowork-eureka
+      dockerfile: Dockerfile
+    image: cowork-eureka:latest
+    restart: on-failure
+    container_name: cowork-eureka
+    environment:
+      HOSTNAME: cowork-eureka
+      JAVA_OPTS: "-Xmx64M -Xms64M -Dspring.profiles.active=test"
+    ports:
+      - 8761:8761
+    healthcheck:
+      test: nc -z cowork-eureka 8761 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - api_net
+  cowork-config:
+    build:
+      context: ./cowork-config
+      dockerfile: Dockerfile
+    image: cowork-config:latest
+    restart: on-failure
+    container_name: cowork-config
+    environment:
+      EUREKA_URL: http://cowork-eureka:8761/eureka/
+      JAVA_OPTS: "-Xmx32M -Xms32M -Dspring.profiles.active=native"
+    healthcheck:
+      test: nc -z cowork-config 8888 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      cowork-eureka:
+        condition: service_healthy
+    networks:
+      - api_net
+  cowork-gateway:
+    build:
+      context: ./cowork-gateway
+      dockerfile: Dockerfile
+    image: cowork-gateway:latest
+    restart: on-failure
+    container_name: cowork-gateway
+    environment:
+      EUREKA_URL: http://cowork-eureka:8761/eureka/
+      JAVA_OPTS: "-Xmx128M -Xms128M -Dspring.profiles.active=test"
+    healthcheck:
+      test: nc -z cowork-gateway 8080 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      cowork-eureka:
+        condition: service_healthy
+      cowork-auth:
+        condition: service_healthy
+    ports:
+      - 8081:8080
+    networks:
+      - api_net
+  cowork-user:
+    build:
+      context: ./cowork-user
+      dockerfile: Dockerfile
+    image: cowork-user:latest
+    restart: on-failure
+    container_name: cowork-user
+    environment:
+      EUREKA_URL: http://cowork-eureka:8761/eureka/
+      JAVA_OPTS: "-Xmx64M -Xms64M -Dspring.profiles.active=test"
+    healthcheck:
+      test: nc -z cowork-user 8080 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      cowork-config:
+        condition: service_healthy
+      db-user:
+        condition: service_healthy
+    networks:
+      - api_net
+      - user_db_net
+  db-user:
+    image: mongo:latest
+    restart: on-failure
+    container_name: db-user
+    environment:
+      MONGO_INITDB_DATABASE: cowork_user
+      MONGO_INITDB_ROOT_USERNAME: cowork_user
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    volumes:
+      - ./cowork-user/src/main/resources/init-user.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo db-user:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - user_db_net
+  cowork-auth:
+    build:
+      context: ./cowork-auth
+      dockerfile: Dockerfile
+    image: cowork-auth:latest
+    restart: on-failure
+    container_name: cowork-auth
+    environment:
+      EUREKA_URL: http://cowork-eureka:8761/eureka/
+      JAVA_OPTS: "-Xmx64M -Xms64M -Dspring.profiles.active=test"
+    healthcheck:
+      test: nc -z cowork-auth 8080 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      cowork-user:
+        condition: service_healthy
+    networks:
+      - api_net
+  cowork-group:
+    build:
+      context: ./cowork-group
+      dockerfile: Dockerfile
+    image: cowork-group:latest
+    restart: on-failure
+    container_name: cowork-group
+    environment:
+      EUREKA_URL: http://cowork-eureka:8761/eureka/
+      JAVA_OPTS: "-Xmx64M -Xms64M -Dspring.profiles.active=test"
+    healthcheck:
+      test: nc -z cowork-group 8080 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 6
+    depends_on:
+      cowork-config:
+        condition: service_healthy
+      db-group:
+        condition: service_healthy
+    networks:
+      - api_net
+      - group_db_net
+  db-group:
+    image: mongo:latest
+    restart: on-failure
+    container_name: db-group
+    environment:
+      MONGO_INITDB_DATABASE: cowork_group
+      MONGO_INITDB_ROOT_USERNAME: cowork_group
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    volumes:
+      - ./cowork-group/src/main/resources/init-group.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo db-group:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - group_db_net
+  cowork-doc:
+    build:
+      context: ./cowork-doc
+      dockerfile: Dockerfile
+    image: cowork-doc:latest
+    restart: on-failure
+    container_name: cowork-doc
+    environment:
+      EUREKA_URL: http://cowork-eureka:8761/eureka/
+      JAVA_OPTS: "-Xmx128M -Xms128M -Dspring.profiles.active=test"
+    healthcheck:
+      test: nc -z cowork-doc 8080 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 6
+    depends_on:
+      cowork-config:
+        condition: service_healthy
+      db-doc:
+        condition: service_healthy
+    networks:
+      - api_net
+      - doc_db_net
+      - kafaka_net
+  db-doc:
+    image: mongo:latest
+    restart: on-failure
+    container_name: db-doc
+    environment:
+      MONGO_INITDB_DATABASE: cowork_doc
+      MONGO_INITDB_ROOT_USERNAME: cowork_doc
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    volumes:
+      - ./cowork-doc/src/main/resources/init-doc.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo db-doc:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - doc_db_net
+      - kafaka_net
+  cowork-collab:
+    build:
+      context: ./cowork-collab
+      dockerfile: Dockerfile
+    image: cowork-collab:latest
+    restart: on-failure
+    container_name: cowork-collab
+    environment:
+      EUREKA_URL: http://cowork-eureka:8761/eureka/
+      JAVA_OPTS: "-Xmx128M -Xms128M -Dspring.profiles.active=test"
+    healthcheck:
+      test: nc -z cowork-doc 8080 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      cowork-doc:
+        condition: service_healthy
+      cowork-auth:
+        condition: service_healthy
+    networks:
+      - api_net
+      - redis_net
+      - kafaka_net
+  cowork-redis:
+    image: redis:latest
+    container_name: cowork-redis
+    restart: on-failure
+    command: redis-server --requirepass password
+    mem_limit: 64M
+    networks:
+      - redis_net
+  cowork-zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: cowork-zookeeper
+    restart: on-failure
+    mem_limit: 64M
+    networks:
+      - kafaka_net
+  cowork-kafka:
+    image: wurstmeister/kafka
+    restart: on-failure
+    mem_limit: 256M
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: cowork-kafka
+      KAFKA_ZOOKEEPER_CONNECT: cowork-zookeeper:2181
+    depends_on:
+      - cowork-zookeeper
+    container_name: cowork-kafka
+    networks:
+      - kafaka_net
+  nginx:
+    image: nginx:latest
+    restart: on-failure
+    container_name: nginx
+    depends_on:
+        - cowork-gateway
+    volumes:
+        - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
+        - ./nginx/conf/conf.d:/etc/nginx/conf.d
+        - ./nginx/logs:/var/logs/nginx
+        - ./cowork-frontend/dist:/usr/share/nginx/html
+        - ./cowork-dashboard/dist:/usr/share/nginx/html/dashboard
+    networks:
+        - api_net
+    ports:
+        - 8080:8080
+
+networks:
+  api_net:
+    driver: bridge
+  user_db_net:
+    driver: bridge
+  group_db_net:
+    driver: bridge
+  doc_db_net:
+    driver: bridge
+  redis_net:
+    driver: bridge
+  kafaka_net:
+    driver: bridge

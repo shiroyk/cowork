@@ -1,0 +1,37 @@
+server:
+  port: 8080
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://cowork-auth:8080/rsa/key
+  cloud:
+    stream:
+      default-binder: kafka
+      kafka:
+        binder:
+          brokers: cowork-kafka:9092
+      bindings:
+        msg-out:
+          binder: kafka
+          destination: msg
+        msg-input:
+          binder: kafka
+          destination: msg
+        cursor-out:
+          binder: kafka
+          destination: cursor
+        cursor-input:
+          binder: kafka
+          destination: cursor
+        crdt-out:
+          binder: kafka
+          destination: crdt
+        crdt-input:
+          binder: kafka
+          destination: crdt
+  redis:
+    host: cowork-redis
+    port: 6379
+    password: password

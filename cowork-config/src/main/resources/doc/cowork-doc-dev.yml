@@ -1,0 +1,16 @@
+server:
+  port: 8084
+spring:
+  data:
+    mongodb:
+      uri: mongodb://cowork_doc:123456@localhost:27019/cowork_doc?authSource=admin&authMechanism=SCRAM-SHA-1
+  cloud:
+    stream:
+      default-binder: kafka
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+        input:
+          binder: kafka
+          destination: crdt

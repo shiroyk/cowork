@@ -1,0 +1,44 @@
+server:
+  port: 8079
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: true
+      routes:
+        - id: auth-route
+          uri: lb://cowork-auth
+          predicates:
+            - Path=/oauth/**
+        - id: user-route
+          uri: lb://cowork-user
+          predicates:
+            - Path=/user/**,/admin/user/**
+        - id: group-route
+          uri: lb://cowork-group
+          predicates:
+            - Path=/group/**,/admin/group/**
+        - id: doc-route
+          uri: lb://cowork-doc
+          predicates:
+            - Path=/doc/**,/admin/doc/**
+        - id: collab-route
+          uri: lb://cowork-collab
+          predicates:
+            - Path=/collab/info/**
+        - id: collab-route
+          uri: lb:ws://cowork-collab
+          predicates:
+            - Path=/collab/**
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8081/rsa/key
