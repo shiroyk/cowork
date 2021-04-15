@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -21,10 +20,15 @@ public class FileService {
 
 
     public FileService() {
-        this.imageLocation = Paths.get("./image").toAbsolutePath().normalize();
+        String profile = System.getProperty("spring.profiles.active", "dev");
+        String path = "./image";
+        if (!profile.equals("dev"))
+            path = "/home/spring/image";
+        this.imageLocation = Paths.get(path).toAbsolutePath().normalize();
+
         try {
             Files.createDirectories(this.imageLocation);
-            log.info("Image path: "+imageLocation.toString());
+            log.info("Image path: "+ imageLocation);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

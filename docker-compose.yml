@@ -173,6 +173,8 @@ services:
     environment:
       EUREKA_URL: http://cowork-eureka:8761/eureka/
       JAVA_OPTS: "-Xmx128M -Xms128M -Dspring.profiles.active=test"
+    volumes:
+      - ./image:/home/spring/image
     healthcheck:
       test: nc -z cowork-doc 8080 || exit 1
       interval: 30s
@@ -266,12 +268,13 @@ services:
         - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
         - ./nginx/conf/conf.d:/etc/nginx/conf.d
         - ./nginx/logs:/var/logs/nginx
-        - ./cowork-frontend/dist:/usr/share/nginx/html
+        - ./cowork-frontend/dist:/usr/share/nginx/html/cowork
         - ./cowork-dashboard/dist:/usr/share/nginx/html/dashboard
     networks:
         - api_net
     ports:
         - 8080:8080
+        - 9090:9090
 
 networks:
   api_net:
