@@ -1,6 +1,7 @@
 package com.shiroyk.cowork.coworkdoc.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -35,8 +35,9 @@ public class FileService {
     }
 
     public String storeImage(MultipartFile file) {
-        String fileName = UUID.randomUUID().toString();
+        String fileName;
         try {
+            fileName = DigestUtils.sha256Hex(file.getInputStream());
             Path targetLocation = this.imageLocation.resolve(fileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {

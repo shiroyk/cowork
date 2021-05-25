@@ -3,6 +3,7 @@ package com.shiroyk.cowork.coworkgroup.controller;
 import com.shiroyk.cowork.coworkcommon.constant.ResultCode;
 import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.GroupDto;
+import com.shiroyk.cowork.coworkcommon.dto.UploadDoc;
 import com.shiroyk.cowork.coworkgroup.dto.PutGroup;
 import com.shiroyk.cowork.coworkgroup.model.Group;
 import com.shiroyk.cowork.coworkgroup.service.DocService;
@@ -365,6 +366,23 @@ public class GroupController {
                 return docService.searchTrashDoc(group.getId(), title);
             }
             return APIResponse.badRequest("没有获已删除文档的权限！");
+        });
+    }
+
+    /**
+     * @Description: 上传群组文档
+     * @param uid 用户ID
+     * @param uploadDoc 上传的文档对象
+     * @return 成功或失败信息
+     */
+    @PostMapping("/doc/uploadDoc")
+    public APIResponse<?> uploadDoc(@RequestHeader("X-User-Id") String uid,
+                                    @RequestBody UploadDoc uploadDoc) {
+        return this.getUserGroup(uid, group -> {
+            if (GroupDto.MemberRole.CreateDelete.equals(group.getMemRole()) || group.getLeader().equals(uid)) {
+                return docService.uploadDoc(uid, group.getId(), uploadDoc);
+            }
+            return APIResponse.badRequest("没有上传(创建)文档的权限！");
         });
     }
 

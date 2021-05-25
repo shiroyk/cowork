@@ -5,7 +5,7 @@
       :tableHeader="tableHeader"
       :searchDoc="searchDoc"
       :showElement="showElement"
-      :clearSearch="loadPage"
+      :loadPage="loadPage"
       :createDoc="createDoc"
       :onRowClick="onRowClick"
       :onRowStarClick="onRowStarClick"

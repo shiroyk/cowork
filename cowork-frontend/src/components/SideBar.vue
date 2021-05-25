@@ -15,7 +15,8 @@
       </el-menu-item>
       <el-menu-item index="/document/group">
         <i class="el-icon-menu"></i>
-        <span slot="title">群组文档</span>
+          <span>群组文档</span>
+        </template>
       </el-menu-item>
       <el-menu-item index="/document/trash">
         <i class="el-icon-delete"></i>

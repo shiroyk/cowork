@@ -3,6 +3,7 @@ package com.shiroyk.cowork.coworkgroup.service;
 import com.shiroyk.cowork.coworkcommon.constant.ResultCode;
 import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.DocDto;
+import com.shiroyk.cowork.coworkcommon.dto.UploadDoc;
 import com.shiroyk.cowork.coworkgroup.client.DocFeignClient;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -64,5 +65,9 @@ public class DocService {
 
     public APIResponse<?> deleteDoc(String group, String did) {
         return docFeignClient.deleteDoc(group, did);
+    }
+
+    public APIResponse<?> uploadDoc(String uid, String group, UploadDoc uploadDoc) {
+        return docFeignClient.uploadDoc(uid, group, uploadDoc);
     }
 }

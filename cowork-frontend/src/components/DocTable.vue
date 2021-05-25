@@ -20,7 +20,7 @@
             slot="append"
             icon="el-icon-close"
             @click="
-              clearSearch()
+              loadPage()
               docTitle = ''
             "
           ></el-button>
@@ -30,11 +30,18 @@
         <el-popover
           v-show="showElement.create"
           placement="top"
-          width="160"
+          width="200"
           v-model="createPop"
         >
           <el-input v-model="newDoc" placeholder="新文档名称"></el-input>
           <div style="text-align: right; margin-top: 10px">
+            <el-button
+              size="small"
+              type="success"
+              style="float: left"
+              @click="uploadDoc()"
+              >上传</el-button
+            >
             <el-button size="small" type="text" @click="createPop = false"
               >取消</el-button
             >
@@ -126,6 +133,7 @@
 
 <script>
 import DocUrlPop from '../components/DocUrlPop'
+import readDocFile from '../utils/docx'
 export default {
   components: {
     DocUrlPop,
@@ -154,13 +162,16 @@ export default {
       type: Function,
       require: true,
     },
-    clearSearch: {
+    loadPage: {
       type: Function,
       require: true,
     },
     createDoc: {
       type: Function,
       require: true,
+    },
+    uploadDocUrl: {
+      type: String,
     },
     onRowClick: {
       type: Function,
@@ -186,9 +197,38 @@ export default {
       recoveryPop: false,
       docTitle: '',
       newDoc: '',
+      loading: false,
     }
   },
-  methods: {},
+  methods: {
+    uploadDoc() {
+      readDocFile(
+        this.uploadDocUrl,
+        () => {
+          this.loading = this.$loading({
+            lock: true,
+            text: '解析并上传文件中...',
+            spinner: 'el-icon-loading',
+            background: 'rgba(0, 0, 0, 0.5)',
+          })
+        },
+        (success) => {
+          this.loading.close()
+          this.$message.success(success)
+          this.loadPage()
+        },
+        (err) => {
+          this.loading.close()
+          this.$message.error(err)
+          this.loadPage()
+        },
+        () => {
+          this.loading.close()
+          this.$message.error('文档解析失败!')
+        }
+      )
+    },
+  },
 }
 </script>
 

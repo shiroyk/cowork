@@ -3,6 +3,8 @@ package com.shiroyk.cowork.coworkdoc.controller;
 import com.shiroyk.cowork.coworkcommon.constant.Permission;
 import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.DocDto;
+import com.shiroyk.cowork.coworkcommon.dto.Operation;
+import com.shiroyk.cowork.coworkcommon.dto.UploadDoc;
 import com.shiroyk.cowork.coworkdoc.model.Doc;
 import com.shiroyk.cowork.coworkdoc.service.DocNodeService;
 import com.shiroyk.cowork.coworkdoc.service.DocService;
@@ -201,6 +203,7 @@ public class DocClientController {
                 .map(doc -> {
                     if (doc.getOwnerId().equals(group)) {
                         docService.delete(doc.getId());
+                        docNodeService.deleteAll(did); // 异步删除全部的文档对象
                         return APIResponse.ok("删除文档成功！");
                     }
                     return APIResponse.badRequest("没有删除文档的权限！");
@@ -249,6 +252,28 @@ public class DocClientController {
             }
             return APIResponse.ok(Permission.Empty);
         }).orElse(APIResponse.ok(Permission.Empty));
+    }
+
+    /**
+     * @Description: 上传文档
+     * @param group 群组ID
+     * @param uid 用户ID, 用于生成操作对象
+     * @param uploadDoc 上传的文档对象
+     * @return 成功或失败信息
+     */
+    @PostMapping("/{group}/uploadDoc")
+    public APIResponse<?> uploadDoc(@RequestHeader("X-User-Id") String uid, @PathVariable String group, @RequestBody UploadDoc uploadDoc) {
+        Doc doc = docService.save(Doc.createGroupDoc(uploadDoc.getDocName(), group));
+
+        if (doc == null) return APIResponse.badRequest("上传文档失败，请稍后重试！");
+
+        if (uploadDoc.getCrdts() == null || uploadDoc.getCrdts().length == 0)
+            return APIResponse.ok("上传文档成功，共解析到0个字符！");
+
+        Operation op = new Operation(uid, doc.getId(), uploadDoc.getCrdts());
+        docNodeService.saveUploadDoc(op);
+
+        return APIResponse.ok("上传文档成功！");
     }
 
 }

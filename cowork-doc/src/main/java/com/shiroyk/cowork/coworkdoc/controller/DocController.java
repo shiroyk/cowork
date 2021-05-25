@@ -3,6 +3,8 @@ package com.shiroyk.cowork.coworkdoc.controller;
 import com.shiroyk.cowork.coworkcommon.constant.Permission;
 import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.DocDto;
+import com.shiroyk.cowork.coworkcommon.dto.Operation;
+import com.shiroyk.cowork.coworkcommon.dto.UploadDoc;
 import com.shiroyk.cowork.coworkdoc.model.Doc;
 import com.shiroyk.cowork.coworkdoc.service.*;
 import lombok.AllArgsConstructor;
@@ -293,6 +295,7 @@ public class DocController {
                         if (doc.isDelete()) {
                             docService.delete(did);
                             userService.deleteUserDocStar(uid, did); // 从用户收藏中删除文档
+                            docNodeService.deleteAll(did); // 异步删除全部的文档对象
                             return APIResponse.ok("彻底删除文档成功！");
                         }
                         return APIResponse.badRequest("文档不在回收站！");
@@ -381,6 +384,28 @@ public class DocController {
             return APIResponse.badRequest("上传失败，请检查文件！");
         }
         return APIResponse.ok("doc/image/" + fileName);
+    }
+
+    /**
+     * @Description: 上传文档
+     * @param uid 用户ID
+     * @param uploadDoc 上传的文档对象
+     * @return 成功或失败信息
+     */
+    @PostMapping("/uploadDoc")
+    public APIResponse<?> uploadDoc(@RequestHeader("X-User-Id") String uid, @RequestBody UploadDoc uploadDoc) {
+        Doc doc = docService.save(Doc.createUserDoc(uploadDoc.getDocName(), uid));
+
+        if (doc == null) return APIResponse.badRequest("上传文档失败，请稍后重试！");
+
+        if (uploadDoc.getCrdts() == null || uploadDoc.getCrdts().length == 0) {
+            return APIResponse.ok("上传文档成功，共解析到0个字符！");
+        }
+
+        Operation op = new Operation(uid, doc.getId(), uploadDoc.getCrdts());
+        docNodeService.saveUploadDoc(op);
+
+        return APIResponse.ok("上传文档成功！");
     }
 
 }

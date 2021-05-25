@@ -2,6 +2,7 @@ package com.shiroyk.cowork.coworkgroup.client;
 
 import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.DocDto;
+import com.shiroyk.cowork.coworkcommon.dto.UploadDoc;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,4 +52,9 @@ public interface DocFeignClient {
 
     @DeleteMapping("/{group}/{did}/delete")
     APIResponse<?> deleteDoc(@PathVariable String group, @PathVariable String did);
+
+    @PostMapping("/{group}/uploadDoc")
+    APIResponse<?> uploadDoc(@RequestHeader("X-User-Id") String uid,
+                             @PathVariable String group,
+                             @RequestBody UploadDoc uploadDoc);
 }

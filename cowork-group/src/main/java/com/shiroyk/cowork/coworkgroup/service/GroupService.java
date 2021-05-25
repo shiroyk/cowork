@@ -39,4 +39,8 @@ public class GroupService {
         group.setUpdateTime();
         return groupRepository.save(group);
     }
+
+    public void delete(String id) {
+        groupRepository.deleteById(id);
+    }
 }

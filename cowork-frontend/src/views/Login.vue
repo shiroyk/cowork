@@ -185,7 +185,6 @@ export default {
                 'updateRefreshToken',
                 res.data.data.refresh_token
               )
-              this.cacheUserInfo()
               this.$router.push({ path: '/document' })
             } else if (res.data.code === 400) {
               this.$message.error('输入的用户名或密码错误！')
@@ -249,22 +248,6 @@ export default {
           this.resetPop = false
           this.$message.error('重置密码失败，请稍后重试！')
         })
-    },
-    cacheUserInfo() {
-      this.$axios
-        .get('/user')
-        .then((res) => {
-          if (res.data.code == 200) {
-            const info = res.data.data
-            this.$store.commit('updateUserInfo', {
-              id: info.id,
-              username: info.username,
-              nickname: info.nickname,
-              avatar: info.avatar,
-            })
-          }
-        })
-        .catch(() => {})
     },
   },
   created: function () {},

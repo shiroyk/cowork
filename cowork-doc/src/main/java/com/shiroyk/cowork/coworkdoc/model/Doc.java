@@ -26,6 +26,19 @@ public class Doc {
     public Doc() {
     }
 
+    public Doc(String title, DocDto.Owner owner) {
+        this.title = title;
+        this.owner = owner;
+    }
+
+    public static Doc createUserDoc(String name, String uid) {
+        return new Doc(name, new DocDto.Owner(uid, DocDto.OwnerEnum.User));
+    }
+
+    public static Doc createGroupDoc(String name, String gid) {
+        return new Doc(name, new DocDto.Owner(gid, DocDto.OwnerEnum.Group));
+    }
+
     public void setUpdateTime() {
         this.updateTime = LocalDateTime.now();
     }

@@ -5,6 +5,8 @@ import SockJS from "sockjs-client"
 import Stomp from "stompjs"
 import axios from "@/api"
 import Sequence from "./sequence"
+import { saveAs } from 'file-saver'
+import * as quillToWord from 'quill-to-word'
 
 const Font = Quill.import("formats/font")
 Font.whitelist = [
@@ -49,10 +51,15 @@ export default class CollabEditor {
     this.cursors = this.editor.getModule("cursors")
 
     this.sequence = new Sequence({
-      version: this.options.docData.version,
-      uid: this.options.userInfo.id
+      version: this.options.docData.version || { uid: this.options.userInfo.id, version: 0 }
     })
-    this.editor.setContents(this.sequence.fromJson(this.options.docData.content), "silent")
+    this.editor.setContents(
+      this.sequence.fromJson(
+        this.options.docData.content,
+        this.options.docData.tombstone
+      ),
+      "silent"
+    )
     this.editor.history.clear()
 
     this.initStomp()
@@ -170,6 +177,28 @@ export default class CollabEditor {
 
   disConnect() {
     if (this.stompClient) this.stompClient.disconnect()
+  }
+
+  saveDoc(name, success = () => { }, error = () => { }) {
+    const deltas = this.editor.getContents().map(async op => {
+      if (op.insert && typeof op.insert == 'object' && /(https?):/.test(op.insert.image)) {
+        await axios.get(op['insert']['image'], {
+          responseType: 'arraybuffer'
+        })
+          .then(img => Buffer(img.data, 'binary').toString('base64'))
+          .then(data => {
+            op['insert']['image'] = 'data:image/png;base64,' + data
+          })
+      }
+      return op
+    })
+
+    Promise.all(deltas).then(async result => {
+      const blob = await quillToWord.generateWord({ ops: result }, { exportAs: 'blob' })
+      console.log(blob);
+      saveAs(blob, `${name}.docx`)
+      success()
+    }).catch(() => error())
   }
 
   uploadImage() {

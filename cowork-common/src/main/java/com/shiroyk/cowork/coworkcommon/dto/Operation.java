@@ -17,4 +17,10 @@ public class Operation {
         this.did = op.did;
         this.crdts = op.crdts;
     }
+
+    public Operation(String uid, String did, CRDT[] crdts) {
+        this.uid = uid;
+        this.did = did;
+        this.crdts = crdts;
+    }
 }

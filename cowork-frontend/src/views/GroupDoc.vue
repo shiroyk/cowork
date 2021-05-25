@@ -5,8 +5,9 @@
       :tableHeader="tableHeader"
       :searchDoc="searchDoc"
       :showElement="showElement"
-      :clearSearch="loadPage"
+      :loadPage="loadPage"
       :createDoc="createDoc"
+      uploadDocUrl="/group/doc/uploadDoc"
       :onRowClick="onRowClick"
       :onRowStarClick="onRowStarClick"
       :onRowDeleteClick="onRowDeleteClick"
@@ -55,7 +56,9 @@ export default {
       this.onRowStarClick = (id) => {
         this.updateDocStar(id)
       }
-      this.onRowDeleteClick = () => {}
+      this.onRowDeleteClick = (data) => {
+        this.deleteDoc('/group/doc/', data)
+      }
       this.loadPage()
     },
   },

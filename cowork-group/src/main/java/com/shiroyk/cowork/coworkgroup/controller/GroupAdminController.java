@@ -61,21 +61,20 @@ public class GroupAdminController {
      * @return 成功或失败信息
      */
     @PostMapping()
-    public APIResponse<Object> createGroup(String name,
-                                          String leader) {
-        return groupService.findGroupByNameEquals(name)
-                .map(group -> APIResponse.badRequest("群组已存在！"))
-                .orElseGet(() -> {
-                    Group group = new Group();
-                    group.setName(name);
-                    group.getUsers().add(leader);
-                    group.setLeader(leader);
-                    group.setDocs(Collections.emptySet());
-                    group.setUsers(Collections.singleton(leader));
-                    group = groupService.save(group);
-                    userService.addUserGroup(leader, group.getId(), true);
-                    return APIResponse.ok("创建群组成功！");
-                });
+    public APIResponse<?> createGroup(String name, String leader) {
+        Group group = new Group();
+        group.setName(name);
+        group.getUsers().add(leader);
+        group.setLeader(leader);
+        group.setDocs(Collections.emptySet());
+        group.setUsers(Collections.singleton(leader));
+        group = groupService.save(group);
+        APIResponse<?> res = userService.addUserGroup(leader, group.getId(), true);
+        if (!ResultCode.Ok.equals(res.getCode())) {
+            groupService.delete(group.getId());
+            return res;
+        }
+        return APIResponse.ok("创建群组成功！");
     }
 
     /**
@@ -132,6 +131,17 @@ public class GroupAdminController {
                     return APIResponse.ok("更新成功！");
                 })
                 .orElse(APIResponse.badRequest("群组不存在！"));
+    }
+
+    /**
+     * @Description: 删除群组
+     * @param id 群组Id
+     * @return 成功或失败信息
+     */
+    @DeleteMapping("/{id}")
+    public APIResponse<Object> deleteGroup(@PathVariable String id) {
+        groupService.delete(id);
+        return APIResponse.ok("删除群组成功！");
     }
 
     /**

@@ -5,7 +5,7 @@ import store from '@/store'
 if (process.env.NODE_ENV == 'development') {
   axios.defaults.baseURL = 'http://localhost:8079/';
 } else if (process.env.NODE_ENV == 'production') {
-  axios.defaults.baseURL = 'http://192.168.95.43:8080/api/';
+  axios.defaults.baseURL = 'http://localhost/api/';
 }
 
 axios.defaults.timeout = 5000

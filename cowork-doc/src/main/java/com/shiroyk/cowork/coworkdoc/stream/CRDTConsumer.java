@@ -17,7 +17,7 @@ public class CRDTConsumer {
 
     @StreamListener(Sink.INPUT)
     public void consume(Message<Operation> opMsg) {
-        docNodeService.applyDelta(opMsg.getPayload());
+        docNodeService.applyOps(opMsg.getPayload());
     }
 
 }

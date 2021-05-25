@@ -14,3 +14,10 @@ spring:
         input:
           binder: kafka
           destination: crdt
+  task:
+    execution:
+      pool:
+        core-size: 10
+        max-size: 20
+        keep-alive: 60s
+        queue-capacity: 100

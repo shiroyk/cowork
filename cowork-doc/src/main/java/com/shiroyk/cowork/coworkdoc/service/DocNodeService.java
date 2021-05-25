@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -22,7 +23,8 @@ import java.util.stream.IntStream;
 public class DocNodeService {
     private final DocNodeRepository docNodeRepository;
 
-    public void applyDelta(Operation ops) {
+    @Async
+    public void applyOps(Operation ops) {
         Arrays.stream(ops.getCrdts()).forEach(crdt -> {
             switch (crdt.type()) {
                 case insert:
@@ -36,6 +38,29 @@ public class DocNodeService {
                     break;
             }
         });
+    }
+
+    @Async
+    public void saveUploadDoc(Operation ops) {
+        Version preVer = new Version(ops.getUid(), 0);
+        Version latestVer = new Version(ops.getUid(), 0);
+        List<DocNode> nodes = new ArrayList<>();
+
+        for (int i = 0; i < ops.getCrdts().length; i++) {
+            CRDT crdt = ops.getCrdts()[i];
+            if (crdt.getInsert() instanceof String) {
+                for (char c : ((String) crdt.getInsert()).toCharArray()) {
+                    latestVer = latestVer.increase();
+                    nodes.add(new DocNode(ops.getDid(), c, crdt.getAttributes(), latestVer, preVer));
+                    preVer = latestVer;
+                }
+            } else {
+                latestVer = latestVer.increase();
+                nodes.add(new DocNode(ops.getDid(), crdt.getInsert(), crdt.getAttributes(), latestVer, preVer));
+                preVer = latestVer;
+            }
+        }
+        this.save(nodes);
     }
 
     public void insert(String docId, String uid, CRDT crdt) {
@@ -151,5 +176,10 @@ public class DocNodeService {
 
     public void save(Iterable<DocNode> nodeIterable) {
         docNodeRepository.saveAll(nodeIterable);
+    }
+
+    @Async
+    public void deleteAll(String id) {
+        docNodeRepository.deleteAll(docNodeRepository.findDocNodesByDocId(id));
     }
 }

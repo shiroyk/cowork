@@ -4,9 +4,9 @@
       <div class="editor-header-left">
         <el-link :underline="false" @click="$router.go(-1)">返回</el-link>
         <el-divider direction="vertical"></el-divider>
-        <span style="font-size: 18px; vertical-align: middle">{{
-          editorTitle
-        }}</span>
+        <el-tooltip :content="editorTitle" placement="bottom">
+          <span class="doc-title">{{ editorTitle }}</span>
+        </el-tooltip>
       </div>
       <div class="editor-header-right" v-if="!loading && hasPermission">
         <el-popover
@@ -61,10 +61,18 @@
               slot="reference"
               icon="el-icon-edit"
               size="small"
-              circle=""
+              circle
             ></el-button>
           </el-popover>
         </span>
+        <el-divider direction="vertical"></el-divider>
+        <el-button
+          size="small"
+          circle
+          icon="el-icon-download"
+          @click="saveDoc()"
+        >
+        </el-button>
       </div>
     </div>
     <el-alert
@@ -302,6 +310,24 @@ export default {
       )
       return JSON.parse(jsonPayload)
     },
+    saveDoc() {
+      const loading = this.$loading({
+        lock: true,
+        text: '文档生成中...',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.5)',
+      })
+      this.editor.saveDoc(
+        this.docInfo.title,
+        () => {
+          loading.close()
+        },
+        () => {
+          loading.close()
+          this.$message.error('文档转换失败，请稍后重试！')
+        }
+      )
+    },
   },
   created: function () {},
   mounted() {
@@ -330,6 +356,8 @@ export default {
   margin-bottom: 5px;
 }
 .editor-header-left {
+  display: flex;
+  align-items: center;
   width: 50%;
   float: left;
   height: 100%;
@@ -362,5 +390,12 @@ export default {
   flex: 1;
   overflow-x: hidden;
   box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.2);
+}
+.doc-title {
+  margin: 0;
+  font-size: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

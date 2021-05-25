@@ -31,11 +31,34 @@
 <script>
 import { mapState } from 'vuex'
 export default {
+  methods: {
+    getUserInfo() {
+      if (this.accessToken && !this.userInfo) {
+        this.$axios
+          .get('/user')
+          .then((res) => {
+            if (res.data.code == 200) {
+              const info = res.data.data
+              this.$store.commit('updateUserInfo', {
+                id: info.id,
+                username: info.username,
+                nickname: info.nickname,
+                avatar: info.avatar,
+              })
+            }
+          })
+          .catch((e) => console.log(e))
+      }
+    },
+  },
   computed: {
     ...mapState({
       accessToken: (state) => state.accessToken,
       userInfo: (state) => state.userInfo,
     }),
+  },
+  mounted() {
+    this.getUserInfo()
   },
 }
 </script>
