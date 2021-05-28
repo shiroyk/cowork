@@ -5,7 +5,8 @@
 ## 项目介绍
 Cowork是一个在线实时协同编辑系统，前端编辑器使用了开源的[Quill](https://github.com/quilljs/quill)，支持富文本编辑。<br>协同编辑算法基于[CRDT](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type)，目前算法在特定情况下还有问题尚待修复。前端的CRDT算法是基于数组实现的，时间复杂度为O(n)，待后续优化为树形结构。
 
-![demo](demo/demo.gif)
+![demo1](demo/demo1.gif)
+![demo2](demo/demo2.png)
 ![cowork](demo/Cowork.png)
 
 ## 使用

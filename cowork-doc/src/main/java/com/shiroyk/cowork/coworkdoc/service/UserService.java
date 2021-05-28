@@ -50,8 +50,16 @@ public class UserService {
         return getUser(id) != null;
     }
 
-    public void updateUserRecentDoc(String uid, String docId) {
-        userFeignClient.updateUserRecentDoc(uid, docId);
+    public Set<String> getUserRecentDoc(String uid) {
+        APIResponse<Set<String>> res = userFeignClient.getUserRecentDoc(uid);
+        if (ResultCode.Ok.equals(res.getCode())) {
+            return res.getData();
+        }
+        return new HashSet<>();
+    }
+
+    public void addUserRecentDoc(String uid, String docId) {
+        userFeignClient.addUserRecentDoc(uid, docId);
     }
 
 }

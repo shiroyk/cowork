@@ -16,7 +16,8 @@ export default new Vuex.Store({
   state: {
     accessToken: localStorage.getItem('accessToken'),
     refreshToken: localStorage.getItem('refreshToken'),
-    userInfo: getObject('userInfo')
+    userInfo: getObject('userInfo'),
+    currentGroup: null
   },
   mutations: {
     updateAccessToken(state, newToken) {
@@ -43,6 +44,9 @@ export default new Vuex.Store({
       localStorage.removeItem('userInfo');
       state.userInfo = null;
     },
+    setCurrentGroup(state, gid) {
+      state.currentGroup = gid
+    }
   },
   actions: {
   },

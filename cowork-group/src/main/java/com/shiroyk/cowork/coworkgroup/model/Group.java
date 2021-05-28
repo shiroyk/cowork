@@ -1,6 +1,7 @@
 package com.shiroyk.cowork.coworkgroup.model;
 
 import com.shiroyk.cowork.coworkcommon.dto.GroupDto;
+import com.shiroyk.cowork.coworkcommon.dto.UserDto;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 
@@ -34,6 +35,10 @@ public class Group {
 
     public GroupDto toGroupDto() {
         return new GroupDto(id, name, describe, leader, memRole);
+    }
+
+    public GroupDto toGroupDtoM(UserDto userDto, Integer user, Integer doc) {
+        return new GroupDto(id, name, describe, leader, userDto, user, doc, memRole);
     }
 
     public void setIsEnable() {

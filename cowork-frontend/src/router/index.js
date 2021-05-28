@@ -32,8 +32,9 @@ const routes = [
         component: () => import("@/views/MyCollection.vue"),
       },
       {
-        path: 'group',
+        path: 'group/:gid',
         component: () => import("@/views/GroupDoc.vue"),
+        props: true
       },
       {
         path: 'trash',
@@ -42,13 +43,7 @@ const routes = [
     ]
   },
   {
-    path: '/edit/:docId',
-    name: 'Editor',
-    component: () => import("@/views/DocEditor.vue"),
-    props: true,
-  },
-  {
-    path: '/doc/:docUrl',
+    path: '/doc/:docId',
     name: 'Doc',
     component: () => import("@/views/DocEditor.vue"),
     props: true,

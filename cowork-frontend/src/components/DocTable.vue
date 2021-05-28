@@ -9,20 +9,13 @@
           v-show="showElement.search"
           v-model="docTitle"
           placeholder="搜索文档"
+          clearable
+          @clear="loadPage()"
         >
           <el-button
             slot="append"
             icon="el-icon-search"
             @click="searchDoc(docTitle)"
-          ></el-button>
-          <el-divider slot="append" direction="vertical"></el-divider>
-          <el-button
-            slot="append"
-            icon="el-icon-close"
-            @click="
-              loadPage()
-              docTitle = ''
-            "
           ></el-button>
         </el-input>
       </el-col>
@@ -51,6 +44,7 @@
               @click="
                 createDoc(newDoc)
                 createPop = false
+                newDoc = ''
               "
               >创建</el-button
             >
@@ -133,7 +127,6 @@
 
 <script>
 import DocUrlPop from '../components/DocUrlPop'
-import readDocFile from '../utils/docx'
 export default {
   components: {
     DocUrlPop,
@@ -170,8 +163,9 @@ export default {
       type: Function,
       require: true,
     },
-    uploadDocUrl: {
-      type: String,
+    uploadDoc: {
+      type: Function,
+      require: true,
     },
     onRowClick: {
       type: Function,
@@ -200,35 +194,7 @@ export default {
       loading: false,
     }
   },
-  methods: {
-    uploadDoc() {
-      readDocFile(
-        this.uploadDocUrl,
-        () => {
-          this.loading = this.$loading({
-            lock: true,
-            text: '解析并上传文件中...',
-            spinner: 'el-icon-loading',
-            background: 'rgba(0, 0, 0, 0.5)',
-          })
-        },
-        (success) => {
-          this.loading.close()
-          this.$message.success(success)
-          this.loadPage()
-        },
-        (err) => {
-          this.loading.close()
-          this.$message.error(err)
-          this.loadPage()
-        },
-        () => {
-          this.loading.close()
-          this.$message.error('文档解析失败!')
-        }
-      )
-    },
-  },
+  methods: {},
 }
 </script>
 

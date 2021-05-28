@@ -9,7 +9,6 @@ import com.shiroyk.cowork.coworkuser.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -32,12 +31,7 @@ public class UserController {
     @GetMapping()
     public APIResponse<UserDto> getUser(@RequestHeader("X-User-Id") String id) {
         return userService.findById(id)
-                .map(user -> {
-                    String group = user.getGroup();
-                    if (!StringUtils.isEmpty(group))
-                        user.setGroup(groupService.getGroup(group));
-                    return APIResponse.ok(user.toUserDto());
-                })
+                .map(user -> APIResponse.ok(user.toUserDtoL()))
                 .orElse(APIResponse.badRequest("无权访问!"));
     }
 
@@ -91,12 +85,7 @@ public class UserController {
     @GetMapping("/{id}")
     public APIResponse<UserDto> findUser(@PathVariable String id) {
         return userService.findUserDtoById(id)
-                .map(userDto -> {
-                    if (!StringUtils.isEmpty(userDto.getGroup())) {
-                        userDto.setGroup(groupService.getGroup(userDto.getGroup()));
-                    }
-                    return APIResponse.ok(userDto);
-                })
+                .map(APIResponse::ok)
                 .orElse(APIResponse.badRequest("未找到用户!"));
     }
 
@@ -120,6 +109,6 @@ public class UserController {
      */
     @PostMapping("/list")
     public APIResponse<List<UserDto>> findUserList(@RequestBody List<String> idList) {
-        return APIResponse.ok(userService.findUserDtoListById(idList));
+        return APIResponse.ok(userService.findUserByIdList(idList).map(User::toUserDtoL).collect(Collectors.toList()));
     }
 }

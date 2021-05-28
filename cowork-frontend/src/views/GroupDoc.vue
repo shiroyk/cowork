@@ -7,7 +7,7 @@
       :showElement="showElement"
       :loadPage="loadPage"
       :createDoc="createDoc"
-      uploadDocUrl="/group/doc/uploadDoc"
+      :uploadDoc="uploadDoc"
       :onRowClick="onRowClick"
       :onRowStarClick="onRowStarClick"
       :onRowDeleteClick="onRowDeleteClick"
@@ -32,38 +32,54 @@ import docMixin from '../mixins/doc'
 
 export default {
   mixins: [docMixin],
+  props: {
+    gid: {
+      type: String,
+    },
+  },
   data() {
     return {}
   },
   methods: {
     groupDoc() {
       this.docData = []
-      this.showElement.remove = false
-      this.getPageSize('/group/doc/count')
+      this.showElement.remove = true
       this.loadPage = () => {
-        this.getDocData(`/group/doc?p=${this.currentPage}`)
+        this.$store.commit('setCurrentGroup', this.gid)
+        this.getDocData(
+          `/group/${this.gid}/doc/count`,
+          `/group/${this.gid}/doc?p=${this.currentPage}`
+        )
         this.showPage = true
       }
       this.searchDoc = (title) => {
-        this.searchDocs('/group/doc/search', title)
+        this.searchDocs(`/group/${this.gid}/doc/search`, title)
       }
       this.createDoc = (title) => {
-        this.createNewDoc('/group/doc', title)
+        this.createNewDoc(`/group/${this.gid}/doc`, title)
+      }
+      this.uploadDoc = () => {
+        this.uploadDocs(`/group/${this.gid}/doc/upload`)
       }
       this.onRowClick = (data) => {
-        this.$router.push({ path: `/edit/${data.id}` })
+        this.$router.push({ path: `/doc/${data.id}` })
       }
       this.onRowStarClick = (id) => {
         this.updateDocStar(id)
       }
       this.onRowDeleteClick = (data) => {
-        this.deleteDoc('/group/doc/', data)
+        this.deleteDoc(`/group/${this.gid}/doc/`, data)
       }
       this.loadPage()
     },
   },
   created() {
     this.groupDoc()
+  },
+  watch: {
+    gid(val, oldVal) {
+      if (val && val != oldVal) this.loadPage()
+    },
   },
 }
 </script>

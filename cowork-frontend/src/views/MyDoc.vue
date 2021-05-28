@@ -7,7 +7,7 @@
       :showElement="showElement"
       :loadPage="loadPage"
       :createDoc="createDoc"
-      uploadDocUrl="/doc/uploadDoc"
+      :uploadDoc="uploadDoc"
       :onRowClick="onRowClick"
       :onRowStarClick="onRowStarClick"
       :onRowDeleteClick="onRowDeleteClick"
@@ -47,9 +47,8 @@ export default {
         star: true,
         share: true,
       })
-      this.getPageSize('/doc/count')
       this.loadPage = () => {
-        this.getDocData(`/doc?p=${this.currentPage}`)
+        this.getDocData('/doc/count', `/doc?p=${this.currentPage}`)
         this.showPage = true
       }
       this.searchDoc = (title) => {
@@ -58,8 +57,11 @@ export default {
       this.createDoc = (title) => {
         this.createNewDoc('/doc', title)
       }
+      this.uploadDoc = () => {
+        this.uploadDocs('/doc/upload')
+      }
       this.onRowClick = (data) => {
-        this.$router.push({ path: `/edit/${data.id}` })
+        this.$router.push({ path: `/doc/${data.id}` })
       }
       this.onRowStarClick = (id) => {
         this.updateDocStar(id)

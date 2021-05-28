@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
@@ -51,20 +51,16 @@ public class UserService {
         return userRepository.findUsersByUsernameContains(name);
     }
 
-    public List<UserDto> findUsersByGroup(String group, Pageable pageable) {
-        return userRepository.findUsersByGroup(group, pageable)
-                .stream().map(User::toUserDtoM)
-                .collect(Collectors.toList());
-    }
-
-    public List<UserDto> findUserDtoListById(List<String> users) {
-        return Streams.stream(userRepository.findAllById(users))
-                .map(User::toUserDtoL)
-                .collect(Collectors.toList());
+    public Stream<User> findUserByIdList(List<String> users) {
+        return Streams.stream(userRepository.findAllById(users));
     }
 
     public User save(User user) {
         user.setUpdateTime();
         return userRepository.save(user);
+    }
+
+    public void saveAll(List<User> users) {
+        userRepository.saveAll(users);
     }
 }

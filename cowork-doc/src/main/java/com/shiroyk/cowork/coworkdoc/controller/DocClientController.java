@@ -147,7 +147,7 @@ public class DocClientController {
         return docService.findById(did)
                 .map(doc -> {
                     if (doc.getOwnerId().equals(group))
-                        return APIResponse.ok(docNodeService.getDocContent(did, 30));
+                        return APIResponse.ok(docNodeService.getDocContent(false, did, 30));
                     return APIResponse.badRequest("没有获取文档的权限！");
                 })
                 .orElse(APIResponse.badRequest("文档不存在！"));
@@ -192,37 +192,23 @@ public class DocClientController {
     }
 
     /**
-     * @Description: 彻底删除文档
+     * @Description: 彻底删除群组回收站的文档
      * @param group 群组Id
      * @param did 文档Id
      * @return 成功或失败消息
      */
-    @DeleteMapping("/{group}/{did}/delete")
+    @DeleteMapping("/{group}/trash/{did}")
     public APIResponse<?> deleteDoc(@PathVariable String group, @PathVariable String did) {
         return docService.findById(did)
                 .map(doc -> {
+                    if (!doc.isDelete())
+                        return APIResponse.ok("文档不在回收站中！");
                     if (doc.getOwnerId().equals(group)) {
                         docService.delete(doc.getId());
                         docNodeService.deleteAll(did); // 异步删除全部的文档对象
                         return APIResponse.ok("删除文档成功！");
                     }
                     return APIResponse.badRequest("没有删除文档的权限！");
-                }).orElse(APIResponse.badRequest("文档不存在！"));
-    }
-
-    /**
-     * @Description: 更新文档所有者
-     * @param group 群组Id
-     * @param did 文档Id
-     * @return 成功或失败消息
-     */
-    @PutMapping("/{group}/{did}")
-    public APIResponse<?> updateDocOwner(@PathVariable String group, @PathVariable String did) {
-        return docService.findById(did)
-                .map(doc -> {
-                    doc.setOwner(new DocDto.Owner(group, DocDto.OwnerEnum.Group));
-                    docService.save(doc);
-                    return APIResponse.ok("更新文档所有者成功！");
                 }).orElse(APIResponse.badRequest("文档不存在！"));
     }
 
@@ -237,7 +223,7 @@ public class DocClientController {
         return docService.findById(did).map(doc -> {
             try {
                 // 更新用户最近编辑文档
-                userService.updateUserRecentDoc(uid, did);
+                userService.addUserRecentDoc(uid, did);
             } catch (Exception ignore) { }
             // 文档属于用户自己或具有公开的URL
             if (doc.belongUser()) {
@@ -261,7 +247,7 @@ public class DocClientController {
      * @param uploadDoc 上传的文档对象
      * @return 成功或失败信息
      */
-    @PostMapping("/{group}/uploadDoc")
+    @PostMapping("/{group}/upload")
     public APIResponse<?> uploadDoc(@RequestHeader("X-User-Id") String uid, @PathVariable String group, @RequestBody UploadDoc uploadDoc) {
         Doc doc = docService.save(Doc.createGroupDoc(uploadDoc.getDocName(), group));
 

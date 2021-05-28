@@ -47,8 +47,12 @@ public class Doc {
         return this.owner != null ? this.owner.getId() : null;
     }
 
-    public boolean hasPermission() {
+    public boolean hasGetPermission() {
         return this.url != null && this.url.hasPermission();
+    }
+
+    public boolean hasWritePermission() {
+        return this.url != null && this.url.getPermission() != null && this.url.getPermission().equals(Permission.ReadWrite);
     }
 
     public DocDto toDocDto() {

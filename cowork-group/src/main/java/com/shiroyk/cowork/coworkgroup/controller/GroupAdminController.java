@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/group")
@@ -64,12 +65,11 @@ public class GroupAdminController {
     public APIResponse<?> createGroup(String name, String leader) {
         Group group = new Group();
         group.setName(name);
-        group.getUsers().add(leader);
         group.setLeader(leader);
         group.setDocs(Collections.emptySet());
         group.setUsers(Collections.singleton(leader));
         group = groupService.save(group);
-        APIResponse<?> res = userService.addUserGroup(leader, group.getId(), true);
+        APIResponse<?> res = userService.setUserGroup(leader, group.getId());
         if (!ResultCode.Ok.equals(res.getCode())) {
             groupService.delete(group.getId());
             return res;
@@ -127,7 +127,7 @@ public class GroupAdminController {
                     if (memberRole != null)
                         group.setMemRole(memberRole);
                     groupService.save(group);
-                    userService.addUserGroup(leader, group.getId(), true);
+                    userService.setUserGroup(leader, group.getId());
                     return APIResponse.ok("更新成功！");
                 })
                 .orElse(APIResponse.badRequest("群组不存在！"));
@@ -135,43 +135,59 @@ public class GroupAdminController {
 
     /**
      * @Description: 删除群组
-     * @param id 群组Id
+     * @param gid 群组Id
      * @return 成功或失败信息
      */
-    @DeleteMapping("/{id}")
-    public APIResponse<Object> deleteGroup(@PathVariable String id) {
-        groupService.delete(id);
-        return APIResponse.ok("删除群组成功！");
+    @DeleteMapping("/{gid}")
+    public APIResponse<?> deleteGroup(@PathVariable String gid) {
+        return groupService.findById(gid)
+                .map(group -> {
+                    // 把用户从群组移除
+                    APIResponse<?> res =  userService.removeUserListGroup(gid, group.getUsers());
+                    if (ResultCode.Ok.equals(res.getCode())) {
+                        // 群组文档也要删除，这里先不写
+                        groupService.delete(gid);
+                        return APIResponse.ok("删除群组成功！");
+                    }
+                    return APIResponse.ok("删除群组失败，请稍后重试！");
+                }).orElse(APIResponse.badRequest("群组不存在！"));
     }
 
     /**
      * @Description: 获取群组成员
-     * @param id 群组Id
+     * @param gid 群组Id
      * @param page 分页
      * @param size 数量
      * @return List<UserDto>
      */
-    @GetMapping("/{id}/user")
-    public APIResponse<List<UserDto>> getGroupUser(@PathVariable String id,
+    @GetMapping("/{gid}/user")
+    public APIResponse<List<UserDto>> getGroupUser(@PathVariable String gid,
                                                   @RequestParam(required = false, defaultValue = "0", value = "p") Integer page,
                                                   @RequestParam(required = false, defaultValue = "10", value = "s") Integer size) {
-        return groupService.findById(id)
-                .map(group -> APIResponse.ok(userService.getGroupUserList(group.getId(), page, size)))
+        return groupService.findById(gid)
+                .map(group -> {
+                    int index = size * page;
+                    List<String> idList = group.getUsers()
+                            .stream().sorted()
+                            .collect(Collectors.toList())
+                            .subList(index, Math.min(index + size, group.getUsers().size()));
+                    return APIResponse.ok(userService.getGroupUserList(idList));
+                })
                 .orElse(APIResponse.badRequest("群组不存在！"));
     }
 
     /**
      * @Description: 添加群组成员
-     * @param id 群组Id
+     * @param gid 群组Id
      * @param uid 用户Id
      * @return 成功或失败信息
      */
-    @PostMapping("/{id}/user")
-    public APIResponse<?> addGroupUser(@PathVariable String id,
+    @PostMapping("/{gid}/user")
+    public APIResponse<?> addGroupUser(@PathVariable String gid,
                                            String uid) {
-        return groupService.findById(id)
+        return groupService.findById(gid)
                 .map(group -> {
-                    APIResponse<?> res = userService.addUserGroup(uid, group.getId(), true);
+                    APIResponse<?> res = userService.setUserGroup(uid, group.getId());
                     if (ResultCode.Ok.equals(res.getCode())) {
                         group.getUsers().add(uid);
                         groupService.save(group);
@@ -183,19 +199,19 @@ public class GroupAdminController {
 
     /**
      * @Description: 移除群组成员
-     * @param id 群组Id
+     * @param gid 群组Id
      * @param uid 用户Id
      * @return 成功或失败信息
      */
-    @DeleteMapping("/{id}/user/{uid}")
-    public APIResponse<?> deleteGroupUser(@PathVariable String id,
-                                              @PathVariable String uid) {
-        return groupService.findById(id)
+    @DeleteMapping("/{gid}/user/{uid}")
+    public APIResponse<?> deleteGroupUser(@PathVariable String gid,
+                                          @PathVariable String uid) {
+        return groupService.findById(gid)
                 .map(group -> {
                     if (group.getLeader().equals(uid)) {
                         return APIResponse.badRequest("该成员是组长！");
                     }
-                    APIResponse<?> res = userService.removeUserGroup(uid);
+                    APIResponse<?> res = userService.removeUserGroup(uid, gid);
                     if (ResultCode.Ok.equals(res.getCode())) {
                         group.getUsers().remove(uid);
                         groupService.save(group);
@@ -207,53 +223,44 @@ public class GroupAdminController {
 
     /**
      * @Description: 获取群组文档
-     * @param id 群组Id
+     * @param gid 群组Id
      * @param page 分页
      * @param size 数量
      * @return List<DocDto>
      */
-    @GetMapping("/{id}/doc")
-    public APIResponse<List<DocDto>> getGroupDoc(@PathVariable String id,
+    @GetMapping("/{gid}/doc")
+    public APIResponse<List<DocDto>> getGroupDoc(@PathVariable String gid,
                                                 @RequestParam(required = false, defaultValue = "0", value = "p") Integer page,
                                                 @RequestParam(required = false, defaultValue = "10", value = "s") Integer size) {
-        return groupService.findById(id)
+        return groupService.findById(gid)
                 .map(group -> docService.getAllDoc(group.getId(), page, size))
                 .orElse(APIResponse.badRequest("群组不存在！"));
     }
 
     /**
      * @Description: 添加群组文档
-     * @param id 群组Id
-     * @param did 文档Id
+     * @param gid 群组Id
+     * @param title 文档名称
      * @return 成功或失败信息
      */
-    @PostMapping("/{id}/doc")
-    public APIResponse<Object> addGroupDoc(@PathVariable String id,
-                                          String did) {
-        return groupService.findById(id)
-                .map(group -> {
-                    if (group.getDocs().add(did)) {
-                        if (ResultCode.Ok.equals(docService.updateDocOwner(group.getId(), did, id))) {
-                            groupService.save(group);
-                            return APIResponse.ok("添加文档成功！");
-                        }
-                        return APIResponse.ok("添加文档失败！");
-                    }
-                    return APIResponse.ok("已有该文档！");
-                })
+    @PostMapping("/{gid}/doc")
+    public APIResponse<?> addGroupDoc(@PathVariable String gid,
+                                          String title) {
+        return groupService.findById(gid)
+                .map(group -> docService.createDoc(group.getId(), title))
                 .orElse(APIResponse.badRequest("群组不存在！"));
     }
 
     /**
      * @Description: 删除群组文档
-     * @param id 群组Id
+     * @param gid 群组Id
      * @param did 文档Id
      * @return 成功或失败信息
      */
-    @DeleteMapping("/{id}/doc/{did}")
-    public APIResponse<?> deleteGroupDoc(@PathVariable String id,
-                                             @PathVariable String did) {
-        return groupService.findById(id)
+    @DeleteMapping("/{gid}/doc/{did}")
+    public APIResponse<?> deleteGroupDoc(@PathVariable String gid,
+                                         @PathVariable String did) {
+        return groupService.findById(gid)
                 .map(group -> {
                     APIResponse<?> res = docService.deleteDoc(group.getId(), did);
                     if (ResultCode.Ok.equals(res.getCode())) {

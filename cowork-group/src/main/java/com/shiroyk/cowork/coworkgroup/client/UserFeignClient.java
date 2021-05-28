@@ -13,18 +13,19 @@ public interface UserFeignClient {
     @GetMapping("/{id}")
     APIResponse<UserDto> getUser(@PathVariable String id);
 
-    @PostMapping("/{group}/user")
-    APIResponse<List<UserDto>> getUserList(@PathVariable String group,
-                                           @RequestParam Integer page,
-                                           @RequestParam Integer size);
+    @PostMapping("/detailList")
+    APIResponse<List<UserDto>> getUserDetailList(@RequestBody List<String> idList);
 
     @PostMapping("/list")
     APIResponse<List<UserDto>> getUserList(@RequestBody Set<String> idList);
 
-    @PostMapping("/{id}/group")
-    APIResponse<?> addUserGroup(@PathVariable String id, @RequestParam String group, @RequestParam boolean force);
+    @PostMapping("/{uid}/group")
+    APIResponse<?> setUserGroup(@PathVariable String uid, @RequestParam String group);
 
-    @DeleteMapping("/{id}/group")
-    APIResponse<?> removeUserGroup(@PathVariable String id);
+    @DeleteMapping("/{uid}/group")
+    APIResponse<?> removeUserGroup(@PathVariable String uid, @RequestParam String group);
+
+    @DeleteMapping("/userList/{group}")
+    APIResponse<?> removeUserListGroup(@PathVariable String group, @RequestBody Set<String> idList);
 }
 

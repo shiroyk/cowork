@@ -2,7 +2,7 @@
   <el-dialog
     :visible.sync="groupUserDialog"
     @open="getGroupInfo()"
-    width="60%"
+    width="40%"
     :show-close="false"
     :close-on-press-escape="false"
     :close-on-click-modal="false"
@@ -73,13 +73,6 @@
               "
             ></el-button>
           </el-badge>
-          <el-button
-            v-show="!groupInfo"
-            icon="el-icon-search"
-            size="small"
-            circle
-            @click="searchGroupDialog = !searchGroupDialog"
-          ></el-button>
         </span>
         <span class="header-btn">
           <el-button
@@ -109,12 +102,9 @@
       </el-table-column>
       <el-table-column width="150">
         <template slot-scope="scope">
-          <div style="font-size: 10px">
-            <span v-show="scope.row.nickname"
-              >{{ scope.row.nickname }}<br
-            /></span>
-            <span>{{ scope.row.username }}</span>
-          </div>
+          <span v-show="scope.row.nickname">{{ scope.row.nickname }}</span>
+          <br />
+          <span>{{ scope.row.username }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="email"> </el-table-column>
@@ -154,20 +144,20 @@
     </el-pagination>
     <el-dialog
       :visible.sync="innerDialog"
-      width="60%"
+      width="40%"
       :title="updateGroup ? '更新群组信息' : '申请消息'"
       append-to-body
     >
-      <el-form v-show="updateGroup" :model="putGroupInfo" label-width="80px">
+      <el-form v-show="updateGroup" :model="groupInfo" label-width="80px">
         <el-form-item label="群组名称">
-          <el-input v-model="putGroupInfo.name"></el-input>
+          <el-input v-model="groupInfo.name"></el-input>
         </el-form-item>
         <el-form-item label="群组介绍">
-          <el-input v-model="putGroupInfo.describe"></el-input>
+          <el-input v-model="groupInfo.describe"></el-input>
         </el-form-item>
         <el-form-item label="成员权限">
           <el-select
-            v-model="putGroupInfo.memberRole"
+            v-model="groupInfo.memberRole"
             placeholder="请选择成员权限"
           >
             <el-option
@@ -198,7 +188,7 @@
             <el-popconfirm
               placement="bottom"
               trigger="manual"
-              title="是否将同意用户加入？"
+              title="是否同意该申请？"
               v-model="applyUserPop"
               @confirm="allowApply(scope.row.id)"
             >
@@ -210,67 +200,20 @@
                 @click.stop="applyUserPop = !applyUserPop"
               ></el-button>
             </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-dialog>
-    <el-dialog
-      :visible.sync="searchGroupDialog"
-      width="60%"
-      append-to-body
-      :show-close="false"
-    >
-      <el-row
-        slot="title"
-        style="margin: 0 6px"
-        type="flex"
-        align="middle"
-        :gutter="5"
-      >
-        <el-col :span="16"
-          ><span style="font-size: 18px">搜索群组</span>
-        </el-col>
-        <el-col :span="8">
-          <el-input v-model="groupName" width="200px"
-            ><el-button
-              slot="append"
-              icon="el-icon-search"
-              circle
-              @click="searchGroup()"
-            ></el-button
-          ></el-input>
-        </el-col>
-        <el-col :span="2">
-          <el-button
-            circle
-            icon="el-icon-close"
-            @click="searchGroupDialog = !searchGroupDialog"
-          ></el-button>
-        </el-col>
-      </el-row>
-      <el-table
-        :data="searchResult"
-        height="300"
-        style="width: 100%"
-        :show-header="false"
-      >
-        <el-table-column property="name" width="120"> </el-table-column>
-        <el-table-column property="describe" width="200"> </el-table-column>
-        <el-table-column>
-          <template slot-scope="scope">
             <el-popconfirm
+              style="margin-left: 10px"
               placement="bottom"
               trigger="manual"
-              title="是否申请加入该群组？"
-              v-model="applyGroupPop"
-              @confirm="applyGroup(scope.row.id)"
+              title="是否拒绝该申请？"
+              v-model="denyGroupPop"
+              @confirm="denyApply(scope.row.id)"
             >
               <el-button
                 slot="reference"
-                icon="el-icon-plus"
+                icon="el-icon-close"
                 circle
                 size="mini"
-                @click.stop="applyGroupPop = !applyGroupPop"
+                @click.stop="denyGroupPop = !denyGroupPop"
               ></el-button>
             </el-popconfirm>
           </template>
@@ -288,23 +231,23 @@ export default {
       type: Boolean,
       default: false,
     },
+    gid: {
+      type: String,
+    },
   },
   data() {
     return {
       groupInfo: {},
       applyUserPop: false,
       innerDialog: false,
-      searchGroupDialog: false,
-      applyGroupPop: false,
+      denyGroupPop: false,
       groupUserSize: this.groupInfo ? this.groupInfo.user : 0,
       currentPage: 0,
       groupInfoPop: false,
       groupUser: [],
       applyUser: [],
       applySize: 0,
-      searchResult: [],
       removePop: false,
-      groupName: '',
       updateGroup: false,
       putGroupInfo: {
         name: '',
@@ -324,7 +267,7 @@ export default {
     },
     getGroupInfo() {
       this.$axios
-        .get('/group')
+        .get(`/group/${this.currentGroup}`)
         .then((res) => {
           if (res.data.code == 200) {
             this.groupInfo = res.data.data
@@ -335,7 +278,7 @@ export default {
     },
     getGroupUser() {
       this.$axios
-        .get(`/group/user?p=${this.currentPage}`)
+        .get(`/group/${this.currentGroup}/user?p=${this.currentPage}`)
         .then((res) => {
           if (res.data.code == 200) {
             this.groupUser = res.data.data
@@ -351,7 +294,7 @@ export default {
     },
     getApplyUser() {
       this.$axios
-        .get('/group/apply')
+        .get(`/group/${this.currentGroup}/apply`)
         .then((res) => {
           if (res.data.code == 200) {
             this.applyUser = res.data.data
@@ -362,12 +305,7 @@ export default {
     },
     allowApply(id) {
       this.$axios
-        .post(
-          '/group/user',
-          new URLSearchParams({
-            uid: id,
-          })
-        )
+        .post(`/group/${this.currentGroup}/apply/${id}`)
         .then((res) => {
           if (res.data.code == 200) {
             this.$message.success(res.data.msg)
@@ -375,11 +313,20 @@ export default {
             this.getGroupUser()
           } else this.$message.error(res.data.msg)
         })
-        .catch(() => {})
+    },
+    denyApply(id) {
+      this.$axios
+        .delete(`/group/${this.currentGroup}/apply/${id}`)
+        .then((res) => {
+          if (res.data.code == 200) {
+            this.$message.success(res.data.msg)
+            this.getApplyUser()
+          } else this.$message.error(res.data.msg)
+        })
     },
     removeUser(id) {
       this.$axios
-        .delete(`/group/user/${id}`)
+        .delete(`/group/${this.currentGroup}/user/${id}`)
         .then((res) => {
           if (res.data.code == 200) {
             this.$message.success(res.data.msg)
@@ -388,35 +335,9 @@ export default {
         })
         .catch(() => {})
     },
-    searchGroup() {
-      this.$axios
-        .get(`/group/search?name=${this.groupName}`)
-        .then((res) => {
-          if (res.data.code == 200) {
-            this.searchResult = res.data.data
-            this.$message.success(`搜索到${this.searchResult.length}条数据`)
-          } else this.$message.error(res.data.msg)
-        })
-        .catch(() => {})
-    },
-    applyGroup(id) {
-      this.$axios
-        .post(
-          '/group/apply',
-          new URLSearchParams({
-            did: id,
-          })
-        )
-        .then((res) => {
-          if (res.data.code == 200) {
-            this.$message.success(res.data.msg)
-          } else this.$message.error(res.data.msg)
-        })
-        .catch(() => {})
-    },
     exitGroup() {
       this.$axios
-        .delete('/group/exit')
+        .delete(`/group/${this.currentGroup}/exit`)
         .then((res) => {
           if (res.data.code == 200) {
             this.$message.success(res.data.msg)
@@ -427,11 +348,11 @@ export default {
     putGroup() {
       this.$axios
         .put(
-          '/group',
+          `/group/${this.currentGroup}`,
           new URLSearchParams({
-            name: this.putGroupInfo.name,
-            describe: this.putGroupInfo.describe,
-            memberRole: this.putGroupInfo.memberRole,
+            name: this.groupInfo.name,
+            describe: this.groupInfo.describe,
+            memberRole: this.groupInfo.memberRole,
           })
         )
         .then((res) => {
@@ -457,6 +378,7 @@ export default {
   computed: {
     ...mapState({
       userInfo: (state) => state.userInfo || {},
+      currentGroup: (state) => state.currentGroup,
     }),
   },
 }

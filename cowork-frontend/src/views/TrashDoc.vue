@@ -47,9 +47,8 @@ export default {
         star: false,
         share: false,
       })
-      this.getPageSize('/doc/trash/count')
       this.loadPage = () => {
-        this.getDocData(`/doc/trash?p=${this.currentPage}`)
+        this.getDocData('/doc/trash/count', `/doc/trash?p=${this.currentPage}`)
         this.showPage = true
       }
       this.searchDoc = (title) => {

@@ -8,13 +8,15 @@ import java.util.List;
 
 @Data
 public class DocContent {
+    private boolean readOnly;
     private Version version;
     private List<DocNode> content;
 
     public DocContent() {
     }
 
-    public DocContent(Version version, List<DocNode> content) {
+    public DocContent(boolean readOnly, Version version, List<DocNode> content) {
+        this.readOnly = readOnly;
         this.version = version;
         this.content = content;
     }

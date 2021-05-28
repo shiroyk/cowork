@@ -151,9 +151,6 @@ export default {
     docId: {
       type: String,
     },
-    docUrl: {
-      type: String,
-    },
   },
   components: {
     DocUrlPop,
@@ -181,12 +178,9 @@ export default {
         spinner: 'el-icon-loading',
         background: 'rgba(0, 0, 0, 0.5)',
       })
-      if (this.docId || this.docUrl) {
-        const url = this.docId
-          ? `/doc/${this.docId}`
-          : `/doc/url/${this.docUrl}`
+      if (this.docId) {
         this.$axios
-          .get(url)
+          .get(`/doc/${this.docId}`)
           .then((res) => {
             switch (res.data.code) {
               case 200:
@@ -197,12 +191,7 @@ export default {
                   this.putDoc = this.docInfo.putDoc
                   this.editorTitle = this.docInfo.title || '在线文档编辑'
                   this.$nextTick(() => {
-                    let readOnly = false
-                    if (url.includes('url'))
-                      readOnly = this.docInfo.url
-                        ? this.docInfo.url.permission != 'ReadWrite'
-                        : false
-                    this.getDocContent(readOnly)
+                    this.getDocContent()
                   })
                 } else {
                   this.noPermissionTitle = '文档在回收站中，无法进行编辑！'
@@ -227,20 +216,21 @@ export default {
       }
       loading.close()
     },
-    getDocContent(readOnly) {
+    getDocContent() {
       this.$axios
-        .get(`/doc/${this.docInfo.id}/content`)
+        .get(`/doc/${this.docId}/content`)
         .then((res) => {
           if (res.data.code == 200) {
-            if (readOnly) this.editorTitle = `${this.docInfo.title} (只读)`
-            this.initEditor(res.data.data, readOnly)
+            if (res.data.data.readOnly)
+              this.editorTitle = `${this.docInfo.title} (只读)`
+            this.initEditor(res.data.data)
           }
         })
         .catch((err) => {
           console.log(err)
         })
     },
-    initEditor(docData, readOnly) {
+    initEditor(docData) {
       const userInfo = this.parseJwt(this.accessToken)
       this.editor = new Editor({
         container: this.$refs.container,
@@ -248,7 +238,6 @@ export default {
         token: this.accessToken,
         docId: this.docInfo.id,
         docData: docData,
-        readOnly: readOnly,
         userInfo: userInfo,
         onInitError: () => {
           this.hasPermission = false
@@ -393,6 +382,7 @@ export default {
 }
 .doc-title {
   margin: 0;
+  width: 80%;
   font-size: 18px;
   overflow: hidden;
   text-overflow: ellipsis;

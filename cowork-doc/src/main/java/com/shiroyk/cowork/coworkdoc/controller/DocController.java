@@ -141,63 +141,61 @@ public class DocController {
         return docService.findById(did)
                 .map(doc -> {
                     if (doc.belongUser()) {
+                        // 文档属于用户自己
                         if (uid.equals(doc.getOwnerId()))
                             return APIResponse.ok(doc.toDocDto(true));
-                    } else {
-                        if (groupService.existUser(doc.getOwnerId(), uid))
-                            return APIResponse.ok(doc.toDocDto(true));
-                    }
-                    return APIResponse.badRequest("没有获取该文档的权限！");
-                }).orElse(APIResponse.badRequest("文档不存在！"));
-    }
-
-    /**
-     * @Description: 根据文档链接获取文档信息
-     * @param uid 用户Id
-     * @param url 文档链接
-     * @return 文档信息
-     */
-    @GetMapping("/url/{url}")
-    public APIResponse<?> getDocByUrl(@RequestHeader("X-User-Id") String uid, @PathVariable String url) {
-        return docService.findDocByUrl(url)
-                .map(doc -> {
-                    if (doc.belongUser()) {
-                        // 公开的URL具有读写权限
-                        if (doc.hasPermission())
-                            return APIResponse.ok(doc.toDocDto(false));
-                    } else {
+                    } else if (doc.belongGroup()) {
                         // 属于群组且用户在群组里
                         if (groupService.existUser(doc.getOwnerId(), uid))
                             return APIResponse.ok(doc.toDocDto(true));
                     }
                     return APIResponse.badRequest("没有获取该文档的权限！");
-                }).orElse(APIResponse.badRequest("文档不存在！"));
+                }).orElseGet(() ->
+                    // 公开的URL具有权限
+                    docService.findDocByUrl(did)
+                    .map(doc -> {
+                        if (doc.hasGetPermission())
+                            return APIResponse.ok(doc.toDocDto(doc.getOwnerId().equals(uid)));
+                        return APIResponse.badRequest("没有获取该文档的权限！");
+                    }).orElse(APIResponse.badRequest("文档不存在！"))
+                );
     }
 
     /**
      * @Description: 获取文档内容
      * @param uid 用户Id
-     * @param did 文档Id
+     * @param did 文档Id或文档URL
      * @param tombstone 标记为已删除的字符数量
      * @return 文档内容数据
      */
     @GetMapping("/{did}/content")
     public APIResponse<?> getDocContent(@RequestHeader("X-User-Id") String uid,
                                         @PathVariable String did,
-                                        @RequestParam(required = false, defaultValue = "30", value = "tombstone") Integer tombstone) {
+                                        @RequestParam(required = false,
+                                                defaultValue = "30",
+                                                value = "tombstone") Integer tombstone) {
         return docService.findById(did)
                 .map(doc -> {
                     if (doc.belongUser()) {
-                        // 文档属于用户自己或公开的URL具有读写权限
-                        if (uid.equals(doc.getOwnerId()) || doc.hasPermission())
-                            return APIResponse.ok(docNodeService.getDocContent(did, tombstone));
-                    } else {
+                        // 文档属于用户自己
+                        if (uid.equals(doc.getOwnerId()))
+                            return APIResponse.ok(docNodeService.getDocContent(false, did, tombstone));
+                    } else if (doc.belongGroup()) {
                         // 文档属于群组，只有群组内部成员可以获取
                         if (groupService.existUser(doc.getOwnerId(), uid))
-                            return APIResponse.ok(docNodeService.getDocContent(did, tombstone));
+                            return APIResponse.ok(docNodeService.getDocContent(false, did, tombstone));
                     }
                     return APIResponse.badRequest("没有获取该文档的权限！");
-                }).orElse(APIResponse.badRequest("文档不存在！"));
+                }).orElseGet(() ->
+                        // 公开的URL具有读写权限
+                    docService.findDocByUrl(did)
+                    .map(doc -> {
+                        if (doc.hasGetPermission())
+                            return APIResponse.ok(docNodeService
+                                    .getDocContent(!doc.hasWritePermission(), doc.getId(), tombstone));
+                        return APIResponse.badRequest("没有获取该文档的权限！");
+                    }).orElse(APIResponse.badRequest("文档不存在！"))
+                );
     }
 
     /**
@@ -218,6 +216,17 @@ public class DocController {
                     }
                     return APIResponse.badRequest("没有获取该文档的权限！");
                 }).orElse(APIResponse.badRequest("文档不存在！"));
+    }
+
+    /**
+     * @Description: 获取最近访问的文档
+     * @param uid 用户Id
+     * @return List<DocDto>
+     */
+    @GetMapping("/recent")
+    public APIResponse<List<DocDto>> getRecentDoc(@RequestHeader("X-User-Id") String uid) {
+        return APIResponse.ok(docService.findAllById(userService.getUserRecentDoc(uid))
+                .map(Doc::toDocDto).collect(Collectors.toList()));
     }
 
     /**
@@ -392,7 +401,7 @@ public class DocController {
      * @param uploadDoc 上传的文档对象
      * @return 成功或失败信息
      */
-    @PostMapping("/uploadDoc")
+    @PostMapping("/upload")
     public APIResponse<?> uploadDoc(@RequestHeader("X-User-Id") String uid, @RequestBody UploadDoc uploadDoc) {
         Doc doc = docService.save(Doc.createUserDoc(uploadDoc.getDocName(), uid));
 

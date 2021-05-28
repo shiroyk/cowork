@@ -24,6 +24,9 @@ public interface UserFeignClient {
     @DeleteMapping("/{id}/star")
     APIResponse<?> deleteUserDocStar(@PathVariable String id, @RequestParam String docId);
 
-    @PutMapping("/{id}/recent")
-    APIResponse<Object> updateUserRecentDoc(@PathVariable String id, @RequestParam String docId);
+    @GetMapping("/{uid}/recent")
+    APIResponse<Set<String>> getUserRecentDoc(@PathVariable String uid);
+
+    @PostMapping("/{uid}/recent")
+    APIResponse<?> addUserRecentDoc(@PathVariable String uid, @RequestParam String did);
 }

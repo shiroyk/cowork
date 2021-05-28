@@ -1,3 +1,4 @@
+import readDocFile from '../utils/docx'
 const docMixin = {
   components: {
     DocTable: () => import("@/components/DocTable.vue"),
@@ -20,6 +21,7 @@ const docMixin = {
       loadPage: () => { },
       searchDoc: () => { },
       createDoc: () => { },
+      uploadDoc: () => { },
       onRowClick: () => { },
       onRowStarClick: () => { },
       onRowDeleteClick: () => { },
@@ -39,25 +41,16 @@ const docMixin = {
     }
   },
   methods: {
-    getPageSize(url) {
-      this.$axios
-        .get(url)
-        .then((res) => {
-          if (res.data.code == 200) {
-            this.pageSize = res.data.data
-          } else this.$message.error(res.data.msg)
-        })
-        .catch(() => { })
-    },
-    getDocData(url) {
-      this.$axios
-        .get(url)
-        .then((res) => {
-          if (res.data.code == 200) {
-            this.docData = res.data.data
-          } else this.$message.error(res.data.msg)
-        })
-        .catch(() => { })
+    getDocData(docSizeUrl, docDataUrl) {
+      this.$axios.all([
+        this.$axios.get(docSizeUrl),
+        this.$axios.get(docDataUrl)
+      ]).then(res => {
+        if (res[0].data.code == 200 && res[1].data.code == 200) {
+          this.pageSize = res[0].data.data
+          this.docData = res[1].data.data
+        } else this.$message.error(res[0].data.msg)
+      })
     },
     createNewDoc(url, title) {
       this.$axios
@@ -110,6 +103,33 @@ const docMixin = {
           }
         })
         .catch(() => { })
+    },
+    uploadDocs(url) {
+      readDocFile(
+        url,
+        () => {
+          this.loading = this.$loading({
+            lock: true,
+            text: '解析并上传文件中...',
+            spinner: 'el-icon-loading',
+            background: 'rgba(0, 0, 0, 0.5)',
+          })
+        },
+        (success) => {
+          this.loading.close()
+          this.$message.success(success)
+          this.loadPage()
+        },
+        (err) => {
+          this.loading.close()
+          this.$message.error(err)
+          this.loadPage()
+        },
+        () => {
+          this.loading.close()
+          this.$message.error('文档解析失败!')
+        }
+      )
     },
     goPage(page) {
       this.currentPage = page - 1

@@ -458,6 +458,42 @@
 					"response": []
 				},
 				{
+					"name": "/group/{gid}",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"group",
+								"602923a34900db17f08617ab"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "/group/search",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
@@ -506,7 +542,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/user",
+					"name": "/group/{gid}/user",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -521,13 +557,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/user",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/user",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"user"
 							]
 						}
@@ -535,7 +572,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/apply",
+					"name": "/group/{gid}/apply",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -550,13 +587,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/apply",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/apply",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"apply"
 							]
 						}
@@ -564,7 +602,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/apply",
+					"name": "/group/{gid}/apply",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -589,13 +627,14 @@
 							]
 						},
 						"url": {
-							"raw": "http://{{host}}/group/apply",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/apply",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"apply"
 							]
 						}
@@ -603,7 +642,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/user",
+					"name": "/group/{gid}/user",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -628,21 +667,23 @@
 							]
 						},
 						"url": {
-							"raw": "http://{{host}}/group/user",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/apply/60292360786fa61295fd82a5",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
-								"user"
+								"602923a34900db17f08617ab",
+								"apply",
+								"60292360786fa61295fd82a5"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "/group/exit",
+					"name": "/group/{gid}/exit",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -657,13 +698,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/exit",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/exit",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"exit"
 							]
 						}
@@ -671,7 +713,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/user/{id}",
+					"name": "/group/{gid}/user/{uid}",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -686,13 +728,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/user/606c27aa68da984577564684",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/user/606c27aa68da984577564684",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"user",
 								"606c27aa68da984577564684"
 							]
@@ -701,7 +744,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/doc/count",
+					"name": "/group/{gid}/doc/count",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -716,13 +759,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/count",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/count",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
 								"count"
 							]
@@ -731,7 +775,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/doc",
+					"name": "/group/{gid]/doc",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -746,13 +790,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc"
 							]
 						}
@@ -760,7 +805,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/doc",
+					"name": "/group/{gid}/doc",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -785,13 +830,14 @@
 							]
 						},
 						"url": {
-							"raw": "http://{{host}}/group/doc",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc"
 							]
 						}
@@ -799,7 +845,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/doc/{id}",
+					"name": "/group/{gid}/doc/{did}",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -814,22 +860,23 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/606b18a84916cf19a5b9f47e",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/602924fb64fadf4bad2e1a37",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
-								"606b18a84916cf19a5b9f47e"
+								"602924fb64fadf4bad2e1a37"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "/group/doc/{id}",
+					"name": "/group/{gid}/doc/{did}",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -844,22 +891,23 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/606b18a84916cf19a5b9f47e",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/60adef8891d9ce33cd6693ea",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
-								"606b18a84916cf19a5b9f47e"
+								"60adef8891d9ce33cd6693ea"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "/group/doc/{id}/content",
+					"name": "/group/{gid}/doc/{did}/content",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -874,13 +922,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/602924fb64fadf4bad2e1a37/content",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/602924fb64fadf4bad2e1a37/content",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
 								"602924fb64fadf4bad2e1a37",
 								"content"
@@ -890,7 +939,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/doc/search",
+					"name": "/group/{gid}/doc/search",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -905,13 +954,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/search?title=测试",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/search?title=测试",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
 								"search"
 							],
@@ -926,7 +976,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/doc/trash/count",
+					"name": "/group/{gid}/doc/trash/count",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -941,13 +991,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/trash/count",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/trash/count",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
 								"trash",
 								"count"
@@ -957,7 +1008,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/doc/trash",
+					"name": "/group/{gid}/doc/trash",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -972,13 +1023,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/trash",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/trash",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
 								"trash"
 							]
@@ -987,7 +1039,7 @@
 					"response": []
 				},
 				{
-					"name": "/group/doc/trash/{id}",
+					"name": "/group/{gid}/doc/trash/{did}",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -1002,23 +1054,24 @@
 						"method": "PUT",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/trash/602924fb64fadf4bad2e1a37",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/trash/60acc3b93347ac0797e85e61",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
 								"trash",
-								"602924fb64fadf4bad2e1a37"
+								"60acc3b93347ac0797e85e61"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "/group/doc/trash/{id}",
+					"name": "/group/{gid}/doc/trash/{did}",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -1033,23 +1086,24 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/trash/602924fb64fadf4bad2e1a37",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/trash/60adef8891d9ce33cd6693ea",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
 								"trash",
-								"602924fb64fadf4bad2e1a37"
+								"60adef8891d9ce33cd6693ea"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "/group/doc/trash/search",
+					"name": "/group/{gid}/doc/trash/search",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -1064,13 +1118,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/group/doc/trash/search?title=测试",
+							"raw": "http://{{host}}/group/602923a34900db17f08617ab/doc/trash/search?title=测试",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"group",
+								"602923a34900db17f08617ab",
 								"doc",
 								"trash",
 								"search"
@@ -1442,12 +1497,12 @@
 							"urlencoded": [
 								{
 									"key": "name",
-									"value": "研发部",
+									"value": "营销部",
 									"type": "text"
 								},
 								{
 									"key": "leader",
-									"value": "60292360786fa61295fd82a5",
+									"value": "60672654a942ee7c5f2041c7",
 									"type": "text"
 								}
 							]
@@ -1745,8 +1800,8 @@
 							"mode": "urlencoded",
 							"urlencoded": [
 								{
-									"key": "did",
-									"value": "602924fb64fadf4bad2e1a37",
+									"key": "title",
+									"value": "测试文档",
 									"type": "text"
 								}
 							]
@@ -1925,7 +1980,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/admin/doc/602924fb64fadf4bad2e1a37",
+							"raw": "http://{{host}}/admin/doc/6029250464fadf4bad2e1a38",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
@@ -1933,7 +1988,7 @@
 							"path": [
 								"admin",
 								"doc",
-								"602924fb64fadf4bad2e1a37"
+								"6029250464fadf4bad2e1a38"
 							]
 						}
 					},
@@ -2040,7 +2095,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}/admin/doc/602924fb64fadf4bad2e1a37/content",
+							"raw": "http://{{host}}/admin/doc/6029250464fadf4bad2e1a38/content",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
@@ -2048,7 +2103,7 @@
 							"path": [
 								"admin",
 								"doc",
-								"602924fb64fadf4bad2e1a37",
+								"6029250464fadf4bad2e1a38",
 								"content"
 							]
 						}
@@ -2374,41 +2429,6 @@
 					"response": []
 				},
 				{
-					"name": "/doc/url/{url}",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://{{host}}/doc/url/cd4dfea7454b4df69b654425d6551361",
-							"protocol": "http",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"doc",
-								"url",
-								"cd4dfea7454b4df69b654425d6551361"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "/doc/{id}/content",
 					"request": {
 						"auth": {
@@ -2474,6 +2494,41 @@
 					"response": []
 				},
 				{
+					"name": "/doc/{id}/star",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/6029250464fadf4bad2e1a38/star",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"6029250464fadf4bad2e1a38",
+								"star"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "/doc/star",
 					"request": {
 						"auth": {
@@ -2502,6 +2557,40 @@
 							"path": [
 								"doc",
 								"star"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/doc/recent",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}/doc/recent",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"doc",
+								"recent"
 							]
 						}
 					},

@@ -1,7 +1,6 @@
 package com.shiroyk.cowork.coworkuser.repository;
 
 import com.shiroyk.cowork.coworkuser.model.User;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
@@ -15,6 +14,4 @@ public interface UserRepository extends MongoRepository<User, String> {
     User findUserById(String id);
 
     List<User> findUsersByUsernameContains(String name);
-
-    List<User> findUsersByGroup(String group, Pageable pageable);
 }

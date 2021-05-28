@@ -49,10 +49,11 @@ public class GroupDto {
         this.memberRole = memberRole;
     }
 
-    public GroupDto(String id, String name, String describe, UserDto leader, Integer user, Integer doc, MemberRole memberRole) {
+    public GroupDto(String id, String name, String describe, String leader_id, UserDto leader, Integer user, Integer doc, MemberRole memberRole) {
         this.id = id;
         this.name = name;
         this.describe = describe;
+        this.leader_id = leader_id;
         this.leader = leader;
         this.user = user;
         this.doc = doc;

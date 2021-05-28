@@ -74,7 +74,7 @@ public class DocAdminController {
     @GetMapping("/{did}/content")
     public APIResponse<?> getDocContent(@PathVariable String did) {
         return docService.findById(did)
-                .map(doc -> APIResponse.ok(docNodeService.getDocContent(did, 30)))
+                .map(doc -> APIResponse.ok(docNodeService.getDocContent(false, did, 30)))
                 .orElse(APIResponse.badRequest("文档不存在！"));
     }
 

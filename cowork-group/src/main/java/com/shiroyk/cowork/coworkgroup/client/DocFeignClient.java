@@ -50,10 +50,10 @@ public interface DocFeignClient {
     @PutMapping("/{group}/trash/{did}")
     APIResponse<?> recoveryDoc(@PathVariable String group, @PathVariable String did);
 
-    @DeleteMapping("/{group}/{did}/delete")
+    @DeleteMapping("/{group}/trash/{did}")
     APIResponse<?> deleteDoc(@PathVariable String group, @PathVariable String did);
 
-    @PostMapping("/{group}/uploadDoc")
+    @PostMapping("/{group}/upload")
     APIResponse<?> uploadDoc(@RequestHeader("X-User-Id") String uid,
                              @PathVariable String group,
                              @RequestBody UploadDoc uploadDoc);

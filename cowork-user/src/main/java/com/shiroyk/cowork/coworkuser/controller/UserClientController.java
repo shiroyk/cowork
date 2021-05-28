@@ -3,18 +3,18 @@ package com.shiroyk.cowork.coworkuser.controller;
 import com.shiroyk.cowork.coworkcommon.constant.Role;
 import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.UserDto;
+import com.shiroyk.cowork.coworkuser.model.RecentDoc;
 import com.shiroyk.cowork.coworkuser.model.User;
 import com.shiroyk.cowork.coworkuser.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor
@@ -98,86 +98,104 @@ public class UserClientController {
     }
 
     /**
-     * @Description: 获取群组的用户列表
-     * @param group 群组Id
-     * @param page 分页
-     * @param size 数量
-     * @return 用户信息
+     * @Description: 获取用户列表(详情信息)
+     * @param idList 用户Id列表
+     * @return 用户详情信息列表
      */
-    @PostMapping("/{group}/user")
-    public APIResponse<List<UserDto>> getUserList(@PathVariable String group, Integer page, Integer size) {
-        return APIResponse.ok(userService.findUsersByGroup(group, PageRequest.of(page, size)));
+    @PostMapping("/detailList")
+    public APIResponse<List<UserDto>> getUserDetailList(@RequestBody List<String> idList) {
+        return APIResponse.ok(userService.findUserByIdList(idList).map(User::toUserDtoM).collect(Collectors.toList()));
     }
 
     /**
-     * @Description: 获取用户列表
+     * @Description: 获取用户列表(简略信息)
      * @param idList 用户Id列表
-     * @return 用户信息列表
+     * @return 用户简略信息列表
      */
     @PostMapping("/list")
     public APIResponse<List<UserDto>> getUserList(@RequestBody List<String> idList) {
-        return APIResponse.ok(userService.findUserDtoListById(idList));
+        return APIResponse.ok(userService.findUserByIdList(idList).map(User::toUserDtoL).collect(Collectors.toList()));
     }
 
     /**
      * @Description: 设置用户群组
-     * @param id 用户Id
+     * @param uid 用户Id
      * @param group 群组Id
-     * @param force 是否强制加入，目前未做用户可加入多个群组
      * @return 成功或失败信息
      */
-    @PostMapping("/{id}/group")
-    public APIResponse<?> setUserGroup(@PathVariable String id, String group, boolean force) {
-        return userService.findById(id)
+    @PostMapping("/{uid}/group")
+    public APIResponse<?> setUserGroup(@PathVariable String uid, String group) {
+        return userService.findById(uid)
                 .map(user -> {
-                    if (force || StringUtils.isEmpty(user.getGroup())) {
-                        user.setGroup(group);
+                    if (user.getGroup().add(group)) {
                         userService.save(user);
                         return APIResponse.ok("用户加入群组成功！");
                     }
-                    if (group.equals(user.getGroup()))
-                        return APIResponse.badRequest("用户已加入该群组！");
-                    return APIResponse.badRequest("用户已加入其他群组！");
+                    return APIResponse.badRequest("用户已加入该群组！");
                 })
                 .orElse(APIResponse.badRequest("用户不存在！"));
     }
 
     /**
      * @Description: 将用户从群组移除
-     * @param id 用户Id
+     * @param uid 用户Id
+     * @param group 群组Id
      * @return 成功或失败信息
      */
-    @DeleteMapping("/{id}/group")
-    public APIResponse<?> removeUserGroup(@PathVariable String id) {
-        return userService.findById(id)
+    @DeleteMapping("/{uid}/group")
+    public APIResponse<?> removeUserGroup(@PathVariable String uid, String group) {
+        return userService.findById(uid)
                 .map(user -> {
-                    if (StringUtils.isEmpty(user.getGroup()))
-                        return APIResponse.badRequest("用户没有加入群组！");
-                    else
-                        user.setGroup(null);
-                    userService.save(user);
-                    return APIResponse.ok("移出群组成功！");
+                    if (user.getGroup().remove(group)) {
+                        userService.save(user);
+                        return APIResponse.ok("移出群组成功！");
+                    }
+                    return APIResponse.badRequest("用户未加入该群组！");
                 })
                 .orElse(APIResponse.badRequest("用户不存在！"));
     }
 
     /**
-     * @Description: 添加用户最近访问的文档
-     * @param id 用户Id
-     * @param docId 文档Id
+     * @Description: 将群组内的多个用户移除
+     * @param idList 用户Id列表
+     * @return 成功或失败信息
      */
-    @PutMapping("/{id}/recent")
-    public APIResponse<?> updateUserRecentDoc(@PathVariable String id,
-                                          String docId) {
-        return userService.findById(id)
+    @DeleteMapping("/userList/{group}")
+    public APIResponse<?> removeUserListGroup(@PathVariable String group, @RequestBody List<String> idList) {
+        List<User> userList = userService.findUserByIdList(idList)
+                .peek(user -> user.getGroup().remove(group))
+                .collect(Collectors.toList());
+        userService.saveAll(userList);
+        return APIResponse.ok("移出群组成功！");
+    }
+
+    /**
+     * @Description: 获取用户最近访问的文档
+     * @param uid 用户Id
+     */
+    @GetMapping("/{uid}/recent")
+    public APIResponse<?> getUserRecentDoc(@PathVariable String uid) {
+        return userService.findById(uid)
+                .map(user -> APIResponse.ok(user.getRecent()
+                        .stream().sorted(Comparator.reverseOrder())
+                        .map(RecentDoc::getDocId)
+                        .collect(Collectors.toList())))
+                .orElse(APIResponse.badRequest("用户不存在！"));
+    }
+
+    /**
+     * @Description: 添加用户最近访问的文档
+     * @param uid 用户Id
+     * @param did 文档Id
+     */
+    @PostMapping("/{uid}/recent")
+    public APIResponse<?> addUserRecentDoc(@PathVariable String uid,
+                                           String did) {
+        return userService.findById(uid)
                 .map(user -> {
-                    List<String> recent = user.getRecent();
-                    if (recent.size() >= 10) {
-                        recent.remove(10);
-                    }
-                    if (!recent.contains(docId)) {
-                        recent.add(docId);
-                    }
+                    Set<RecentDoc> recent = user.getRecent().stream().sorted().limit(9).collect(Collectors.toSet());
+                    recent.add(new RecentDoc(did));
+                    user.setRecent(recent);
                     userService.save(user);
                     return APIResponse.ok();
                 })

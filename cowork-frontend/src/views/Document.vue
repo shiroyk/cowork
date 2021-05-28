@@ -2,21 +2,24 @@
   <div>
     <Header />
     <el-container>
-      <SideBar />
+      <LeftSideBar />
       <transition name="fade">
-        <router-view style="margin-left: 200px" />
+        <router-view style="margin: 0 200px 0 200px" />
       </transition>
+      <RightSideBar />
     </el-container>
   </div>
 </template>
 
 <script>
 import Header from '../components/Header'
-import SideBar from '../components/SideBar'
+import LeftSideBar from '../components/LeftSideBar'
+import RightSideBar from '../components/RightSideBar'
 export default {
   components: {
     Header,
-    SideBar,
+    LeftSideBar,
+    RightSideBar,
   },
   data() {
     return {}

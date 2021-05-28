@@ -17,7 +17,6 @@ public class User implements UserDetails {
     private String username;
     private String email;
     private String password;
-    private String group;
     private Role role;
     private Boolean isEnable;
 

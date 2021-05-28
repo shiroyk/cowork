@@ -148,10 +148,10 @@ public class DocNodeService {
         return docNodeRepository.findById(id);
     }
 
-    public DocContent getDocContent(String docId, int size) {
+    public DocContent getDocContent(boolean readOnly, String docId, int size) {
         DocNode latestNode = docNodeRepository.findFirstByDocId(docId, Sort.by("version.version").descending());
         Version latestVer = latestNode == null ? Version.head() : latestNode.getVersion();
-        return new DocContent(latestVer, this.findDocNodesByDocIdAndTombstoneFalse(docId));
+        return new DocContent(readOnly, latestVer, this.findDocNodesByDocIdAndTombstoneFalse(docId));
     }
 
     public List<DocNode> findDocNodesByDocId(String docId) {

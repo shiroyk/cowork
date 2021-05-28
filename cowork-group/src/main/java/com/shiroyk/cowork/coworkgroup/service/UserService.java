@@ -14,12 +14,16 @@ import java.util.*;
 public class UserService {
     private final UserFeignClient userFeignClient;
 
-    public APIResponse<?> addUserGroup(String id, String group, boolean force) {
-        return userFeignClient.addUserGroup(id, group, force);
+    public APIResponse<?> setUserGroup(String id, String group) {
+        return userFeignClient.setUserGroup(id, group);
     }
 
-    public APIResponse<?> removeUserGroup(String id) {
-        return userFeignClient.removeUserGroup(id);
+    public APIResponse<?> removeUserGroup(String id, String group) {
+        return userFeignClient.removeUserGroup(id, group);
+    }
+
+    public APIResponse<?> removeUserListGroup(String group, Set<String> idList) {
+        return userFeignClient.removeUserListGroup(group, idList);
     }
 
     public UserDto getUser(String id) {
@@ -34,12 +38,6 @@ public class UserService {
         return Optional.of(this.getUser(id));
     }
 
-    public Optional<String> getUserGroup(String id) {
-        UserDto userDto = this.getUser(id);
-        String group = userDto == null ? null : userDto.getGroup();
-        return Optional.ofNullable(group);
-    }
-
     public List<UserDto> getUserList(Set<String> idList) {
         APIResponse<List<UserDto>> userRes = userFeignClient.getUserList(idList);
         if (ResultCode.Ok.equals(userRes.getCode())) {
@@ -48,8 +46,8 @@ public class UserService {
         return new ArrayList<>();
     }
 
-    public List<UserDto> getGroupUserList(String group, Integer page, Integer size) {
-        APIResponse<List<UserDto>> userRes = userFeignClient.getUserList(group, page, size);
+    public List<UserDto> getGroupUserList(List<String> idList) {
+        APIResponse<List<UserDto>> userRes = userFeignClient.getUserDetailList(idList);
         if (ResultCode.Ok.equals(userRes.getCode())) {
             return userRes.getData();
         }

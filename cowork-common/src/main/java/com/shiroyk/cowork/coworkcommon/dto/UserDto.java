@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.shiroyk.cowork.coworkcommon.constant.Role;
 import lombok.Data;
 
-import java.util.List;
 import java.util.Set;
 
 @Data
@@ -16,11 +15,9 @@ public class UserDto {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String avatar;
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String group;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Role role;
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List<String> recent;
+    private Set<String> group;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Set<String> star;
 
@@ -43,24 +40,12 @@ public class UserDto {
         this.avatar = avatar;
     }
 
-    public UserDto(String id, String username, String nickname, String email, String group, String avatar) {
+    public UserDto(String id, String username, String nickname, String email, Set<String> group, String avatar) {
         this.id = id;
         this.username = username;
         this.nickname = nickname;
         this.email = email;
         this.group = group;
         this.avatar = avatar;
-    }
-
-    public UserDto(String id, String username, String nickname, String email, String group, String avatar, List<String> recent, Set<String> star, Role role) {
-        this.id = id;
-        this.username = username;
-        this.nickname = nickname;
-        this.email = email;
-        this.group = group;
-        this.role = role;
-        this.recent = recent;
-        this.avatar = avatar;
-        this.star = star;
     }
 }

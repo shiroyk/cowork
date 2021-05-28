@@ -45,13 +45,14 @@ export default class CollabEditor {
         cursors: true
       },
       theme: "snow",
-      readOnly: this.options.readOnly
+      readOnly: this.options.docData.readOnly
     })
 
     this.cursors = this.editor.getModule("cursors")
 
     this.sequence = new Sequence({
-      version: this.options.docData.version || { uid: this.options.userInfo.id, version: 0 }
+      version: this.options.docData.version,
+      uid: this.options.userInfo.id
     })
     this.editor.setContents(
       this.sequence.fromJson(

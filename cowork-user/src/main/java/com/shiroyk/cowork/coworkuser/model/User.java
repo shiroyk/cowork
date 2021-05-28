@@ -16,11 +16,11 @@ public class User {
     private String nickname;
     private String email;
     private String password;
-    private String group;
     private String avatar;
     private Role role;
     private Boolean isEnable = true;
-    private List<String> recent = new ArrayList<>();
+    private Set<String> group = new HashSet<>();
+    private Set<RecentDoc> recent = new HashSet<>();
     private Set<String> star = new HashSet<>();
     private LocalDateTime createTime = LocalDateTime.now();
     private LocalDateTime updateTime = LocalDateTime.now();
@@ -47,13 +47,8 @@ public class User {
         return new UserDto(id, username, nickname, email, group, avatar);
     }
 
-    public UserDto toUserDto() {
-        return new UserDto(id, username, nickname, email, group, avatar, recent, star, role);
-    }
-
-    public User setIsEnable() {
+    public void setIsEnable() {
         isEnable = !isEnable;
-        return this;
     }
 
     public void setUpdateTime() {

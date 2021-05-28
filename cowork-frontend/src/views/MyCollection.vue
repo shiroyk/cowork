@@ -49,7 +49,11 @@ export default {
       this.tableHeader = ''
       this.showPage = false
       this.loadPage = () => {
-        this.getDocData('/doc/star')
+        this.$axios.get('/doc/star').then((res) => {
+          if (res.data.code == 200) {
+            this.docData = res.data.data
+          }
+        })
       }
       this.onRowStarClick = (id) => {
         this.updateDocStar(id)
