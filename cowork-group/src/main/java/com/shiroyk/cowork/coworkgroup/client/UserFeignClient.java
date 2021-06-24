@@ -24,8 +24,5 @@ public interface UserFeignClient {
 
     @DeleteMapping("/{uid}/group")
     APIResponse<?> removeUserGroup(@PathVariable String uid, @RequestParam String group);
-
-    @DeleteMapping("/userList/{group}")
-    APIResponse<?> removeUserListGroup(@PathVariable String group, @RequestBody Set<String> idList);
 }
 

@@ -1242,7 +1242,12 @@
 									"value": "0",
 									"type": "text"
 								}
-							]
+							],
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "http://{{host}}/admin/user",
@@ -2023,12 +2028,12 @@
 									"type": "text"
 								},
 								{
-									"key": "url",
-									"value": "",
+									"key": "permission",
+									"value": "ReadWrite",
 									"type": "text"
 								},
 								{
-									"key": "delete",
+									"key": "isDelete",
 									"value": "false",
 									"type": "text"
 								}
@@ -2074,37 +2079,6 @@
 								"admin",
 								"doc",
 								"602924fb64fadf4bad2e1a37"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "/admin/doc/{id}/content",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://{{host}}/admin/doc/6029250464fadf4bad2e1a38/content",
-							"protocol": "http",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"admin",
-								"doc",
-								"6029250464fadf4bad2e1a38",
-								"content"
 							]
 						}
 					},
@@ -2840,7 +2814,7 @@
 		},
 		{
 			"key": "host",
-			"value": "localhost:8079"
+			"value": "localhost:8081"
 		}
 	]
 }

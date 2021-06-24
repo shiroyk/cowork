@@ -15,13 +15,6 @@ import java.util.List;
 public class GroupService {
     private final GroupFeignClient groupFeignClient;
 
-    public Long getGroupSize() {
-        APIResponse<Long> res = groupFeignClient.getGroupSize();
-        if (ResultCode.Ok.equals(res.getCode()))
-            return res.getData();
-        return 0L;
-    }
-
     public List<String> getUsers(String id) {
         APIResponse<List<String>> res = groupFeignClient.getUsers(id);
         if (ResultCode.Ok.equals(res.getCode()))
@@ -39,13 +32,4 @@ public class GroupService {
             return res.getData();
         return null;
     }
-
-    public boolean groupExist(String id) {
-        return getGroup(id) != null;
-    }
-
-    public void addGroupDoc(String id, String did) {
-        groupFeignClient.addGroupDoc(id, did);
-    }
-
 }

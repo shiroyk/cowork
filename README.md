@@ -9,7 +9,24 @@ Cowork是一个在线实时协同编辑系统，前端编辑器使用了开源�
 ![demo2](demo/demo2.png)
 ![cowork](demo/Cowork.png)
 
-## 使用
+## 模块说明
+
+| 目录             | 说明     | 端口号 |
+| ---------------- | -------- | ------ |
+| cowork-admin     | 后台模块 | 8087   |
+| cowork-auth      | 认证模块 | 8083   |
+| cowork-collab    | 协作模块 | 8085   |
+| cowork-common    | 公共包   | 无     |
+| cowork-config    | 配置中心 | 8888   |
+| cowork-dashboard | 后台前端 | 9090   |
+| cowork-doc       | 文档模块 | 8084   |
+| cowork-eureka    | 注册中心 | 8761   |
+| cowork-frontend  | 系统前端 | 8080   |
+| cowork-gateawy   | 网关模块 | 8081   |
+| cowork-group     | 群组模块 | 8086   |
+| cowork-user      | 用户模块 | 8082   |
+
+## Docker 使用
 安装`npm`、`maven`、`docker`、`docker-compose`
 - 克隆仓库
 ```
@@ -18,7 +35,7 @@ git clone https://github.com/shiroyk/Cowork.git
 - 编译后端
 ```
 cd Cowork
-mvn package
+mvn package -Dmaven.test.skip=true
 ```
 - 编译前端
 ```

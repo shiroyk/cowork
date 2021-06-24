@@ -59,8 +59,6 @@ services:
         condition: service_healthy
       cowork-auth:
         condition: service_healthy
-    ports:
-      - 8081:8080
     networks:
       - api_net
   cowork-user:
@@ -207,6 +205,35 @@ services:
     networks:
       - doc_db_net
       - kafaka_net
+  cowork-admin:
+    build:
+      context: ./cowork-admin
+      dockerfile: Dockerfile
+    image: cowork-admin:latest
+    restart: on-failure
+    container_name: cowork-admin
+    environment:
+      EUREKA_URL: http://cowork-eureka:8761/eureka/
+      JAVA_OPTS: "-Xmx64M -Xms64M -Dspring.profiles.active=test"
+    healthcheck:
+      test: nc -z cowork-admin 8080 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 6
+    depends_on:
+      cowork-config:
+        condition: service_healthy
+      db-doc:
+        condition: service_healthy
+      db-group:
+        condition: service_healthy
+      db-user:
+        condition: service_healthy
+    networks:
+      - api_net
+      - doc_db_net
+      - group_db_net
+      - user_db_net
   cowork-collab:
     build:
       context: ./cowork-collab

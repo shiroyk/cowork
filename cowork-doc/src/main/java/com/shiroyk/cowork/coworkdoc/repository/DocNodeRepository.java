@@ -1,7 +1,7 @@
 package com.shiroyk.cowork.coworkdoc.repository;
 
 import com.shiroyk.cowork.coworkcommon.crdt.Version;
-import com.shiroyk.cowork.coworkdoc.model.DocNode;
+import com.shiroyk.cowork.coworkcommon.model.doc.DocNode;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;

@@ -5,7 +5,8 @@ import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.DocDto;
 import com.shiroyk.cowork.coworkcommon.dto.Operation;
 import com.shiroyk.cowork.coworkcommon.dto.UploadDoc;
-import com.shiroyk.cowork.coworkdoc.model.Doc;
+import com.shiroyk.cowork.coworkcommon.model.doc.Doc;
+import com.shiroyk.cowork.coworkcommon.model.doc.Owner;
 import com.shiroyk.cowork.coworkdoc.service.DocNodeService;
 import com.shiroyk.cowork.coworkdoc.service.DocService;
 import com.shiroyk.cowork.coworkdoc.service.GroupService;
@@ -54,7 +55,7 @@ public class DocClientController {
     @PostMapping("/{group}")
     public APIResponse<?> createDoc(@PathVariable String group, String title) {
         Doc doc = new Doc();
-        doc.setOwner(new DocDto.Owner(group, DocDto.OwnerEnum.Group));
+        doc.setOwner(new Owner(group, Owner.OwnerEnum.Group));
         if (StringUtils.isEmpty(title))
             return APIResponse.badRequest("文档名不能为空！");
         doc.setTitle(title);

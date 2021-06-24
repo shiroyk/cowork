@@ -1,5 +1,5 @@
 server:
-  port: 8079
+  port: 8081
 spring:
   cloud:
     gateway:
@@ -20,15 +20,15 @@ spring:
         - id: user-route
           uri: lb://cowork-user
           predicates:
-            - Path=/user/**,/admin/user/**
+            - Path=/user/**
         - id: group-route
           uri: lb://cowork-group
           predicates:
-            - Path=/group/**,/admin/group/**
+            - Path=/group/**
         - id: doc-route
           uri: lb://cowork-doc
           predicates:
-            - Path=/doc/**,/admin/doc/**
+            - Path=/doc/**
         - id: collab-route
           uri: lb://cowork-collab
           predicates:
@@ -37,8 +37,12 @@ spring:
           uri: lb:ws://cowork-collab
           predicates:
             - Path=/collab/**
+        - id: admin-route
+          uri: lb://cowork-admin
+          predicates:
+            - Path=/admin/**
   security:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:8081/rsa/key
+          jwk-set-uri: http://localhost:8083/rsa/key

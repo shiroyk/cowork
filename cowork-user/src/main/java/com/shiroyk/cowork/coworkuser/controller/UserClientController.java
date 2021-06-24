@@ -3,8 +3,8 @@ package com.shiroyk.cowork.coworkuser.controller;
 import com.shiroyk.cowork.coworkcommon.constant.Role;
 import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.UserDto;
-import com.shiroyk.cowork.coworkuser.model.RecentDoc;
-import com.shiroyk.cowork.coworkuser.model.User;
+import com.shiroyk.cowork.coworkcommon.model.user.RecentDoc;
+import com.shiroyk.cowork.coworkcommon.model.user.User;
 import com.shiroyk.cowork.coworkuser.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -156,20 +156,6 @@ public class UserClientController {
     }
 
     /**
-     * @Description: 将群组内的多个用户移除
-     * @param idList 用户Id列表
-     * @return 成功或失败信息
-     */
-    @DeleteMapping("/userList/{group}")
-    public APIResponse<?> removeUserListGroup(@PathVariable String group, @RequestBody List<String> idList) {
-        List<User> userList = userService.findUserByIdList(idList)
-                .peek(user -> user.getGroup().remove(group))
-                .collect(Collectors.toList());
-        userService.saveAll(userList);
-        return APIResponse.ok("移出群组成功！");
-    }
-
-    /**
      * @Description: 获取用户最近访问的文档
      * @param uid 用户Id
      */
@@ -193,7 +179,8 @@ public class UserClientController {
                                            String did) {
         return userService.findById(uid)
                 .map(user -> {
-                    Set<RecentDoc> recent = user.getRecent().stream().sorted().limit(9).collect(Collectors.toSet());
+                    Set<RecentDoc> recent = user.getRecent().stream().sorted()
+                            .limit(9).collect(Collectors.toSet());
                     recent.add(new RecentDoc(did));
                     user.setRecent(recent);
                     userService.save(user);

@@ -15,13 +15,6 @@ import java.util.Set;
 public class UserService {
     private final UserFeignClient userFeignClient;
 
-    public Long getUserSize() {
-        APIResponse<Long> res = userFeignClient.getUserSize();
-        if (ResultCode.Ok.equals(res.getCode()))
-            return res.getData();
-        return 0L;
-    }
-
     public UserDto getUser(String id) {
         APIResponse<UserDto> res = userFeignClient.getUser(id);
         if (ResultCode.Ok.equals(res.getCode())) {
@@ -44,10 +37,6 @@ public class UserService {
 
     public void deleteUserDocStar(String id, String docId) {
         userFeignClient.deleteUserDocStar(id, docId);
-    }
-
-    public boolean userExist(String id) {
-        return getUser(id) != null;
     }
 
     public Set<String> getUserRecentDoc(String uid) {

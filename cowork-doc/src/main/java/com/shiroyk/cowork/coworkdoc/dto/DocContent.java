@@ -1,7 +1,7 @@
 package com.shiroyk.cowork.coworkdoc.dto;
 
 import com.shiroyk.cowork.coworkcommon.crdt.Version;
-import com.shiroyk.cowork.coworkdoc.model.DocNode;
+import com.shiroyk.cowork.coworkcommon.model.doc.DocNode;
 import lombok.Data;
 
 import java.util.List;

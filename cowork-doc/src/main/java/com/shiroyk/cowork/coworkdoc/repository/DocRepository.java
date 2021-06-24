@@ -1,6 +1,6 @@
 package com.shiroyk.cowork.coworkdoc.repository;
 
-import com.shiroyk.cowork.coworkdoc.model.Doc;
+import com.shiroyk.cowork.coworkcommon.model.doc.Doc;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
@@ -30,7 +30,4 @@ public interface DocRepository extends MongoRepository<Doc, String> {
 
     @Query("{ 'url.url': ?0, 'delete': false }")
     Optional<Doc> findDocByDeleteAndUrl(String url);
-
-    @Query("{ 'owner.id': ?0 }")
-    List<Doc> findDocsByOwner(String owner, Pageable pageable);
 }

@@ -22,10 +22,6 @@ public class UserService {
         return userFeignClient.removeUserGroup(id, group);
     }
 
-    public APIResponse<?> removeUserListGroup(String group, Set<String> idList) {
-        return userFeignClient.removeUserListGroup(group, idList);
-    }
-
     public UserDto getUser(String id) {
         APIResponse<UserDto> res = userFeignClient.getUser(id);
         if (ResultCode.Ok.equals(res.getCode())) {

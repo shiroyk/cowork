@@ -3,8 +3,7 @@ package com.shiroyk.cowork.coworkuser.controller;
 import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.UserDto;
 import com.shiroyk.cowork.coworkuser.dto.request.UserInfo;
-import com.shiroyk.cowork.coworkuser.model.User;
-import com.shiroyk.cowork.coworkuser.service.GroupService;
+import com.shiroyk.cowork.coworkcommon.model.user.User;
 import com.shiroyk.cowork.coworkuser.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/user")
 public class UserController {
     private final UserService userService;
-    private final GroupService groupService;
 
     /**
      * @Description: 获取用户信息

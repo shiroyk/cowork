@@ -15,5 +15,5 @@ db.group.save({
     "memRole": "Create",
     "createTime": ISODate("1970-01-01T00:00:00.00Z"),
     "updateTime": ISODate("1970-01-01T00:00:00.00Z"),
-    "_class": "com.shiroyk.cowork.coworkgroup.model.Group"
+    "_class": "com.shiroyk.cowork.coworkcommon.model.group.Group"
 });

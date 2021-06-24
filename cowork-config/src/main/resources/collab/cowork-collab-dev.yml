@@ -5,7 +5,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:8081/rsa/key
+          jwk-set-uri: http://localhost:8083/rsa/key
   cloud:
     stream:
       default-binder: kafka

@@ -27,7 +27,7 @@ public enum ResultCode {
         return code;
     }
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static ResultCode fromCode(int code) {
         for (ResultCode c : ResultCode.values()) {
             if (c.code == code) {

@@ -1,0 +1,13 @@
+server:
+  port: 8080
+spring:
+  data:
+    mongodb:
+      user:
+        uri: mongodb://cowork_user:123456@db-user:27017/cowork_user?authSource=admin&authMechanism=SCRAM-SHA-1
+      group:
+        uri: mongodb://cowork_group:123456@db-group:27017/cowork_group?authSource=admin&authMechanism=SCRAM-SHA-1
+      doc:
+        uri: mongodb://cowork_doc:123456@db-doc:27017/cowork_doc?authSource=admin&authMechanism=SCRAM-SHA-1
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration

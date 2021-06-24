@@ -10,6 +10,7 @@ spring:
       server:
         native:
           search-locations:
+            - classpath:/admin/
             - classpath:/auth/
             - classpath:/collab/
             - classpath:/doc/

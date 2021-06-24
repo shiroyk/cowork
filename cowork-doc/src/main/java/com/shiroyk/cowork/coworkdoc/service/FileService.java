@@ -21,9 +21,7 @@ public class FileService {
 
     public FileService() {
         String profile = System.getProperty("spring.profiles.active", "dev");
-        String path = "./image";
-        if (!profile.equals("dev"))
-            path = "/home/spring/image";
+        String path = "dev".equals(profile) ? "./image" : "/home/spring/image";
         this.imageLocation = Paths.get(path).toAbsolutePath().normalize();
 
         try {
@@ -47,12 +45,12 @@ public class FileService {
         return fileName;
     }
 
-    public Resource loadImageAsResource(String fileName) throws IOException {
+    public Resource loadImageAsResource(String fileName) {
         Path filePath = this.imageLocation.resolve(fileName).normalize();
-        Resource resource = new UrlResource(filePath.toUri());
-        if(resource.exists()) {
-            return resource;
-        } else {
+        try {
+            return new UrlResource(filePath.toUri());
+        } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }

@@ -10,7 +10,7 @@ db.user.insertMany([{
     "isEnable": true,
     "createTime": ISODate("1970-01-01T00:00:00.00Z"),
     "updateTime": ISODate("1970-01-01T00:00:00.00Z"),
-    "_class": "com.shiroyk.cowork.coworkuser.model.User"
+    "_class": "com.shiroyk.cowork.coworkcommon.model.user.User"
 },
 {
     "_id": ObjectId("60292360786fa61295fd82a5"),
@@ -26,7 +26,7 @@ db.user.insertMany([{
     "isEnable": true,
     "createTime": ISODate("1970-01-01T00:00:00.00Z"),
     "updateTime": ISODate("1970-01-01T00:00:00.00Z"),
-    "_class": "com.shiroyk.cowork.coworkuser.model.User"
+    "_class": "com.shiroyk.cowork.coworkcommon.model.user.User"
 },
 {
     "_id": ObjectId("60672654a942ee7c5f2041c7"),
@@ -42,6 +42,6 @@ db.user.insertMany([{
     "isEnable": true,
     "createTime": ISODate("1970-01-01T00:00:00.00Z"),
     "updateTime": ISODate("1970-01-01T00:00:00.00Z"),
-    "_class": "com.shiroyk.cowork.coworkuser.model.User"
+    "_class": "com.shiroyk.cowork.coworkcommon.model.user.User"
 }
 ]);

@@ -5,7 +5,8 @@ import com.shiroyk.cowork.coworkcommon.dto.APIResponse;
 import com.shiroyk.cowork.coworkcommon.dto.DocDto;
 import com.shiroyk.cowork.coworkcommon.dto.Operation;
 import com.shiroyk.cowork.coworkcommon.dto.UploadDoc;
-import com.shiroyk.cowork.coworkdoc.model.Doc;
+import com.shiroyk.cowork.coworkcommon.model.doc.Doc;
+import com.shiroyk.cowork.coworkcommon.model.doc.Owner;
 import com.shiroyk.cowork.coworkdoc.service.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,7 +69,7 @@ public class DocController {
     @PostMapping()
     public APIResponse<?> createDoc(@RequestHeader("X-User-Id") String uid, String title) {
         Doc doc = new Doc();
-        doc.setOwner(new DocDto.Owner(uid, DocDto.OwnerEnum.User));
+        doc.setOwner(new Owner(uid, Owner.OwnerEnum.User));
         if (StringUtils.isEmpty(title))
             return APIResponse.badRequest("文档名不能为空！");
         doc.setTitle(title);
@@ -172,8 +173,8 @@ public class DocController {
     public APIResponse<?> getDocContent(@RequestHeader("X-User-Id") String uid,
                                         @PathVariable String did,
                                         @RequestParam(required = false,
-                                                defaultValue = "30",
-                                                value = "tombstone") Integer tombstone) {
+                                                      defaultValue = "30",
+                                                      value = "tombstone") Integer tombstone) {
         return docService.findById(did)
                 .map(doc -> {
                     if (doc.belongUser()) {
