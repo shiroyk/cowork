@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collab
+  namespace: cowork
+spec:
+  selector:
+    matchLabels:
+      app: collab
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: collab
+    spec:
+      initContainers:
+        - name: wait-nats
+          image: registry.k8s.io/busybox:1.24
+          command: [ 'sh', '-c', 'until nslookup nats-service; do echo waiting for nats-service; sleep 2; done;' ]
+        - name: wait-doc
+          image: registry.k8s.io/busybox:1.24
+          command: [ 'sh', '-c', 'until nslookup doc-service; do echo waiting for doc-service; sleep 2; done;' ]
+      containers:
+        - name: collab
+          image: cowork-collab:latest
+          imagePullPolicy: Never
+          env:
+            - name: PROFILE
+              value: "k8s"
+          envFrom:
+            - configMapRef:
+                name: collab-config
+            - secretRef:
+                name: redis-url
+            - secretRef:
+                name: nats-url
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: 50m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: collab-service
+  namespace: cowork
+spec:
+  type: NodePort
+  selector:
+    app: collab
+  ports:
+    - protocol: "TCP"
+      port: 8080
+      targetPort: 8080
+      name: http
+
+---
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: collab-hpa
+  namespace: cowork
+  annotations:
+    metric-config.pods.users.json-path/json-key: "$.users"
+    metric-config.pods.users.json-path/path: /metrics
+    metric-config.pods.users.json-path/port: "8080"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: collab
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: users
+        target:
+          type: AverageValue
+          averageValue: "10"

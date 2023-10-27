@@ -1,0 +1,38 @@
+ARG APP
+ARG TZ=Asia/Shanghai
+
+FROM ghcr.io/graalvm/native-image-community:17 AS native-builder
+ARG APP
+
+RUN microdnf install findutils
+
+WORKDIR /workdir
+COPY . /workdir
+
+RUN --mount=type=cache,id=gradle,target=/root/.gradle \
+    ./gradlew $APP:service:nativeCompile
+
+FROM alpine:latest
+ARG APP
+ARG TZ
+
+RUN apk add --no-cache tzdata gcompat && \
+    cp /usr/share/zoneinfo/$TZ /etc/localtime && \
+    adduser  \
+        --disabled-password  \
+        --gecos "" \
+        --home "/nonexistent"  \
+        --shell "/sbin/nologin"  \
+        --no-create-home  \
+        --uid "100001"  \
+        "appuser"
+
+COPY --from=native-builder /workdir/$APP/service/build/native/nativeCompile/app /usr/local/bin/app
+
+RUN mkdir -p /var/log/app && chown appuser /var/log/app
+USER appuser
+
+VOLUME /var/log/app
+EXPOSE 8080 9090
+
+ENTRYPOINT ["app"]

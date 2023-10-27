@@ -1,0 +1,53 @@
+button {
+  border-radius: 5px;
+  border: 1px solid transparent;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+button:hover {
+  border-color: #646cff;
+}
+
+.btn {
+  height: 45px;
+  padding: 0 5px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.online-user {
+  margin-left: 5px;
+  font-weight: bold;
+}
+
+.editor-box {
+  width: 100vw;
+  height: 100%;
+}
+
+.login-dialog {
+  border: 2px solid #646cff;
+  border-radius: 10px;
+  background-color: #1a1a1a60;
+}
+
+.login-dialog input {
+  height: 30px;
+  font-size: 16px;
+  width: 300px;
+  margin: 3px 0;
+}
+
+.editor {
+  width: calc(100% - 2px);
+  height: calc(50vh - 28px);
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}

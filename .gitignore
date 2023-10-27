@@ -1,0 +1,32 @@
+# Logs
+logs
+*.log
+
+.DS_Store
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+coverage.out
+coverage.html
+
+.gradle
+build
+.protobuf
+.cache
+
+.flattened-pom.xml
+
+dist
+/data
+generated
+node_modules

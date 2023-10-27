@@ -1,0 +1,18 @@
+ARG APP
+
+FROM node:21-alpine AS builder
+ARG APP
+ARG TZ
+
+WORKDIR /app
+COPY $APP /app
+
+RUN --mount=type=cache,id=npm,target=/app/node_modules npm install && npm run build
+
+FROM nginx:alpine
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: doc
+  namespace: cowork
+spec:
+  selector:
+    matchLabels:
+      app: doc
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: doc
+    spec:
+      initContainers:
+        - name: wait-db-doc
+          image: registry.k8s.io/busybox:1.24
+          command: [ 'sh', '-c', 'until nslookup db-doc-service; do echo waiting for db-doc-service; sleep 2; done;' ]
+        - name: wait-nats
+          image: registry.k8s.io/busybox:1.24
+          command: [ 'sh', '-c', 'until nslookup nats-service; do echo waiting for nats-service; sleep 2; done;' ]
+      containers:
+        - name: doc
+          image: cowork-doc:latest
+          imagePullPolicy: Never
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "k8s"
+          envFrom:
+            - secretRef:
+                name: doc-db-url
+            - secretRef:
+                name: nats-url
+          volumeMounts:
+            - name: spring-config
+              mountPath: /etc/spring-config/
+          ports:
+            - containerPort: 8080
+            - containerPort: 9090
+          resources:
+            limits:
+              cpu: 100m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: spring-config
+          configMap:
+            name: doc-config
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: doc-service
+  namespace: cowork
+spec:
+  type: NodePort
+  selector:
+    app: doc
+  ports:
+    - protocol: "TCP"
+      port: 8080
+      targetPort: 8080
+      name: http
+    - protocol: "TCP"
+      port: 9090
+      targetPort: 9090
+      name: grpc
+
+---
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: doc-hpa
+  namespace: cowork
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: doc
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          averageUtilization: 70
+          type: AverageValue

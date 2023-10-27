@@ -1,0 +1,26 @@
+[
+  {
+    "name": "common.handler.GrpcExceptionAdvice",
+    "queryAllDeclaredMethods": true,
+    "methods": [
+      {
+        "name": "apiExceptionHandler",
+        "parameterTypes": [
+          "common.exception.ApiException"
+        ]
+      },
+      {
+        "name": "exceptionHandler",
+        "parameterTypes": [
+          "java.lang.Throwable"
+        ]
+      }
+    ],
+    "queriedMethods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [ ]
+      }
+    ]
+  }
+]

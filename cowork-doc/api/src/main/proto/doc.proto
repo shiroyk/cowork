@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "doc/api";
+option java_multiple_files = true;
+option java_package = "doc.api";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service DocService {
+    rpc verifyPermission(VerifyRequest) returns (VerifyResponse) {}
+    rpc findNodesByDid(google.protobuf.StringValue) returns (DocNodes) {}
+}
+
+message VerifyRequest {
+  string uid = 1;
+  string did = 2;
+}
+
+message VerifyResponse {
+  bool ok = 1;
+  string msg = 2;
+}
+
+message DocNodes {
+  repeated bytes nodes = 1;
+}

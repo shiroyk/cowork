@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-user-secret
+  namespace: cowork
+data:
+  replica.key: |
+    dkR1ZHZHdWFxaDk5dGM2UVBjelIrdUUzUUFVQU11S3FIYUxjd01mdWcxbTM5bTJoSG96RENnbGNFMDl2ampmMQpy
+    RG9GTFpvWU0yR205QU8vL2gyYXpUUDYxbHNEd3RFWnRmazVTdkdwcld6NDVXT2Q4cCtxMFlPb3UvdE4yd2FLCjA0
+    WFdENTJwdU5lcHFRc1Rrd1lIeERYWVFoeEcreWJYbU81MG55Y2xuUW9VekFMTHdHREVFZkFxbWlnYVhESHcKYlE2
+    VmFFQmlmY3ozQ2ZNNDdqSUNFRnlxL21PQVJ0NERMQUtCc1RjRHYrejZ2V2hDSDZHYkN2S3k4VEJDTjFLLwpiMUFs
+    d0xucTJLZW5jYmx1UFVJVlZVc0V0dnU3bndLOExHd1NhZWt1L3FNYng1S1p2VnhmOU9YUU5yUlM2dEZMCk9VSmMx
+    UEUyV0ZmQUJIbW9uWEY4WEE9PQ==
+  PASSWORD: |
+    dXNlcjEyMzQ1Ng==
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-user-service
+  namespace: cowork
+spec:
+  selector:
+    app: db-user
+  ports:
+    - port: 27017
+      targetPort: 27017
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-user
+  namespace: cowork
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: db-user
+  serviceName: db-user-service
+  template:
+    metadata:
+      labels:
+        app: db-user
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7.0.2
+          imagePullPolicy: IfNotPresent
+          command: [bash, /tmp/script/start.sh]
+          readinessProbe:
+            exec:
+              command:
+                - echo
+                - db.runCommand("ping").ok
+                - '|'
+                - mongosh
+                - localhost:27017/test
+                - --quiet
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits:
+              memory: 256Mi
+          env:
+            - name: MONGO_INITDB_DATABASE
+              value: "user"
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "user"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: PASSWORD
+                  name: db-user-secret
+          volumeMounts:
+            - name: key-dir
+              mountPath: /data/security
+            - name: db-script
+              mountPath: /tmp/script
+            - name: db-user-data
+              mountPath: /data/db
+            - name: db-user-secret
+              mountPath: /tmp/key
+      volumes:
+        - name: key-dir
+          emptyDir: {}
+        - name: db-script
+          configMap:
+            name: db-script
+        - name: db-user-secret
+          secret:
+            secretName: db-user-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: db-user-data
+        namespace: cowork
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 128Mi

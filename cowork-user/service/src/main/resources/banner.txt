@@ -1,0 +1,8 @@
+${AnsiColor.CYAN}  _   _
+${AnsiColor.CYAN} | | | |___  ___ _ __
+${AnsiColor.CYAN} | | | / __|/ _ \ '__|
+${AnsiColor.CYAN} | |_| \__ \  __/ |
+${AnsiColor.CYAN}  \___/|___/\___|_|
+${AnsiStyle.NORMAL}
+=> ${spring.application.name} started on ${AnsiColor.GREEN}localhost:${server.port:8080}
+${AnsiStyle.NORMAL}

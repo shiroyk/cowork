@@ -1,0 +1,15 @@
+server:
+  port: 8081
+spring:
+  data:
+    mongodb:
+      uri: mongodb://dev:123456@localhost:27017/dev?authSource=admin
+
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    org.springframework.transaction.interceptor: TRACE
+
+grpc:
+  server:
+    port: 9091

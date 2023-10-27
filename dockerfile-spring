@@ -1,0 +1,29 @@
+ARG APP
+ARG TZ=Asia/Shanghai
+
+FROM ghcr.io/graalvm/jdk-community:17 AS java-builder
+ARG APP
+
+RUN microdnf install findutils
+
+WORKDIR /workdir
+COPY . /workdir
+
+RUN --mount=type=cache,id=gradle,target=/root/.gradle \
+    ./gradlew $APP:service:bootJar
+
+FROM ghcr.io/graalvm/jdk-community:17
+ARG APP
+
+COPY --from=java-builder /workdir/$APP/service/build/libs/service.jar /app/app.jar
+
+RUN adduser --shell "/sbin/nologin"  \
+            --no-create-home  \
+            --uid "100001"  \
+            "appuser" && \
+    mkdir -p /var/log/app && chown appuser /var/log/app
+USER appuser
+VOLUME /var/log/app
+EXPOSE 8080 9090
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

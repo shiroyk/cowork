@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "user/api";
+option java_multiple_files = true;
+option java_package = "user.api";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service UserService {
+  rpc findById (google.protobuf.StringValue) returns (User) {}
+  rpc findByIds (Ids) returns (UserList) {}
+  rpc findByName (google.protobuf.StringValue) returns (User) {}
+  rpc create (User) returns (User) {}
+  rpc resetPassword (User) returns (google.protobuf.Empty) {}
+  rpc saveSession (SessionAction) returns (google.protobuf.Empty) {}
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  string password = 4;
+  repeated Session sessions = 5;
+}
+
+message Ids {
+  repeated string id = 1;
+}
+
+message UserList {
+  message Dto {
+    string id = 1;
+    string username = 2;
+    string nickname = 3;
+    string email = 4;
+    string avatar = 5;
+  }
+
+  repeated Dto item = 1;
+}
+
+
+message Session {
+  string id = 1;
+  string ip = 2;
+  string client = 3;
+  int64 timestamp = 4;
+}
+
+message SessionAction {
+  enum Action {
+    SignIn = 0;
+    Logout = 1;
+    Refresh = 2;
+  }
+  Action action = 1;
+  string userId = 2;
+  Session session = 3;
+}

@@ -1,0 +1,272 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cowork
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jwt-secret
+  namespace: cowork
+data:
+  JWT_SECRET: Y293b3JrLWp3dC1zZWNyZXQ=
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-url
+  namespace: cowork
+data:
+  REDIS_URL: cmVkaXM6Ly9kZWZhdWx0OnJlZGlzMTIzNDU2QHJlZGlzLXNlcnZpY2U6NjM3OQ==
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nats-url
+  namespace: cowork
+data:
+  NATS_URL: bmF0czovL25hdHMxMjM0NUBuYXRzLXNlcnZpY2U6NDIyMg==
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: user-db-url
+  namespace: cowork
+data:
+  USER_DB_URL: bW9uZ29kYjovL3VzZXI6dXNlcjEyMzQ1NkBkYi11c2VyLXNlcnZpY2U6MjcwMTcvdXNlcj9hdXRoU291cmNlPWFkbWluJnJlcGxpY2FTZXQ9cnMwJnJlYWRQcmVmZXJlbmNlPXByaW1hcnk=
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: doc-db-url
+  namespace: cowork
+data:
+  DOC_DB_URL: bW9uZ29kYjovL2RvYzpkb2MxMjM0NTZAZGItZG9jLXNlcnZpY2U6MjcwMTcvZG9jP2F1dGhTb3VyY2U9YWRtaW4mcmVwbGljYVNldD1yczAmcmVhZFByZWZlcmVuY2U9cHJpbWFyeQ==
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: auth-config
+  namespace: cowork
+data:
+  USER_GRPC_SERVICE: "user-service:9090"
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: user-config
+  namespace: cowork
+data:
+  application.yml: |-
+    spring:
+      data:
+        mongodb:
+          uri: ${USER_DB_URL}
+    grpc:
+      client:
+        user:
+          address: dns:/user-service:9090
+    logging:
+      file:
+        path: /var/log/app
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: doc-config
+  namespace: cowork
+data:
+  application.yml: |-
+    spring:
+      data:
+        mongodb:
+          uri: ${DOC_DB_URL}
+    grpc:
+      client:
+        user:
+          address: dns:/doc-service:9090
+    nats:
+      spring:
+        server: ${NATS-URL}
+    logging:
+      file:
+        path: /var/log/app
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: collab-config
+  namespace: cowork
+data:
+  USER_GRPC_SERVICE: "user-service:9090"
+  DOC_GRPC_SERVICE: "doc-service:9090"
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: db-script
+  namespace: cowork
+data:
+  init.sh: |
+    until mongosh --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' &>/dev/null; do echo "waiting db"; sleep 2; done
+    if [[ "$(hostname)" =~ ^[a-z-]+0 ]]; then
+      mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --eval \
+      "rs.initiate({\"_id\":\"rs0\",\"members\":[{\"_id\":0,\"host\":\"$(hostname -f):27017\"}]})"
+    else
+      mongosh mongodb://$(hostname -f | sed -e 's/[0-9]\./0./'):27017 -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --eval \
+      "rs.add('$(hostname -f):27017')"
+    fi
+  start.sh: |
+    cp /tmp/key/replica.key /data/security/replica.key
+    chmod 400 /data/security/replica.key
+    chown 999:999 /data/security/replica.key
+    bash /tmp/script/init.sh &
+    docker-entrypoint.sh mongod --replSet rs0 --keyFile /data/security/replica.key
+
+---
+
+apiVersion: v1
+data:
+  server-snippet: |
+    error_page 401 /401.json;
+    location = /401.json {
+        return 401 '{"error":"Unauthorized"}';
+    }
+    error_page 500 /500.json;
+    location = /500.json {
+        return 500 '{"error":"Internal Server Error"}';
+    }
+    error_page 503 /503.json;
+    location = /503.json {
+        return 503 '{"error":"Service Unavailable"}';
+    }
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: 1.8.1
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-auth
+  namespace: cowork
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: http://app.cowork.local
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /api$1$2
+    nginx.ingress.kubernetes.io/auth-url: http://auth-service.cowork.svc.cluster.local:8080/auth
+    nginx.ingress.kubernetes.io/auth-response-headers: X-User-Id
+spec:
+  ingressClassName: "nginx"
+  rules:
+    - host: api.cowork.local
+      http:
+        paths:
+          - path: /auth(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8080
+          - path: /users(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 8080
+          - path: /doc(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: doc-service
+                port:
+                  number: 8080
+          - path: /collab(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: collab-service
+                port:
+                  number: 8080
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-public
+  namespace: cowork
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: http://app.cowork.local
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /api/$1
+spec:
+  ingressClassName: "nginx"
+  rules:
+    - host: api.cowork.local
+      http:
+        paths:
+          - path: /auth/(sign_in|sign_up|refresh)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8080
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend
+  namespace: cowork
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: "nginx"
+  rules:
+    - host: app.cowork.local
+      http:
+        paths:
+          - path: /(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80

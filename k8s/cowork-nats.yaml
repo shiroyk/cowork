@@ -1,0 +1,125 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nats-secret
+  namespace: cowork
+data:
+  TOKEN: bmF0czEyMzQ1
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nats-config
+  namespace: cowork
+data:
+  nats.conf: |
+    server_name: $HOSTNAME
+    http: 8222
+    
+    authorization {
+      token: $TOKEN
+    }
+    
+    jetstream {
+      store_dir: /data/jetstream
+    }
+
+    cluster {
+      name: cowork
+      port: 6222
+      no_advertise: true
+      routes [
+        nats-route://nats-service.cowork.svc.cluster.local:6222
+      ]
+      connect_retries: 30
+    }
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nats-service
+  namespace: cowork
+spec:
+  selector:
+    app: nats
+  ports:
+    - name: nats
+      port: 4222
+      targetPort: 4222
+    - name: cluster
+      port: 6222
+      targetPort: 6222
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nats
+  namespace: cowork
+spec:
+  serviceName: nats-service
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nats
+  template:
+    metadata:
+      labels:
+        app: nats
+    spec:
+      containers:
+        - name: nats
+          image: nats:2.10
+          imagePullPolicy: IfNotPresent
+          command:
+            - nats-server
+            - -c
+            - /etc/nats/nats.conf
+          resources:
+            limits:
+              memory: 128Mi
+          ports:
+            - containerPort: 4222
+              name: nats
+            - containerPort: 6222
+              name: cluster
+            - containerPort: 8222
+              name: monitor
+          envFrom:
+            - secretRef:
+                name: nats-secret
+          volumeMounts:
+            - name: nats-config
+              mountPath: /etc/nats
+            - name: nats-data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /healthz?js-server-only=true
+              port: 8222
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 3
+      volumes:
+        - name: nats-config
+          configMap:
+            name: nats-config
+        - name: nats-data
+          persistentVolumeClaim:
+            claimName: nats-pvc
+  volumeClaimTemplates:
+    - metadata:
+        name: nats-data
+        namespace: cowork
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 128Mi

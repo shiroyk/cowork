@@ -1,0 +1,106 @@
+kind: Secret
+apiVersion: v1
+metadata:
+  name: db-doc-secret
+  namespace: cowork
+data:
+  replica.key: |
+    dkR1ZHZHdWFxaDk5dGM2UVBjelIrdUUzUUFVQU11S3FIYUxjd01mdWcxbTM5bTJoSG96RENnbGNFMDl2ampmMX
+    JEb0ZMWm9ZTTJHbTlBTy8vaDJhelRQNjFsc0R3dEVadGZrNVN2R3ByV3o0NVdPZDhwK3EwWU9vdS90TjJ3YUsw
+    NFhXRDUycHVOZXBxUXNUa3dZSHhEWFlRaHhHK3liWG1PNTBueWNsblFvVXpBTEx3R0RFRWZBcW1pZ2FYREh3Yl
+    E2VmFFQmlmY3ozQ2ZNNDdqSUNFRnlxL21PQVJ0NERMQUtCc1RjRHYrejZ2V2hDSDZHYkN2S3k4VEJDTjFLL2Ix
+    QWx3TG5xMktlbmNibHVQVUlWVlVzRXR2dTdud0s4TEd3U2Fla3UvcU1ieDVLWnZWeGY5T1hRTnJSUzZ0RkxPVU
+    pjMVBFMldGZkFCSG1vblhGOFhBPT0=
+  PASSWORD: |
+    ZG9jMTIzNDU2
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-doc-service
+  namespace: cowork
+spec:
+  selector:
+    app: db-doc
+  ports:
+    - port: 27017
+      targetPort: 27017
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-doc
+  namespace: cowork
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: db-doc
+  serviceName: db-doc-service
+  template:
+    metadata:
+      labels:
+        app: db-doc
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7.0.2
+          imagePullPolicy: IfNotPresent
+          command: [bash, /tmp/script/start.sh]
+          readinessProbe:
+            exec:
+              command:
+                - echo
+                - db.runCommand("ping").ok
+                - '|'
+                - mongosh
+                - localhost:27017/test
+                - --quiet
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits:
+              memory: 256Mi
+          env:
+            - name: MONGO_INITDB_DATABASE
+              value: "doc"
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "doc"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: PASSWORD
+                  name: db-doc-secret
+          volumeMounts:
+            - name: key-dir
+              mountPath: /data/security
+            - name: db-script
+              mountPath: /tmp/script
+            - name: db-doc-data
+              mountPath: /data/db
+            - name: db-doc-secret
+              mountPath: /tmp/key
+      volumes:
+        - name: key-dir
+          emptyDir: {}
+        - name: db-script
+          configMap:
+            name: db-script
+        - name: db-doc-secret
+          secret:
+            secretName: db-doc-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: db-doc-data
+        namespace: cowork
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 128Mi

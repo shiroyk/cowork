@@ -1,0 +1,39 @@
+ARG APP
+ARG TZ=Asia/Shanghai
+
+FROM golang:1.21-alpine AS builder
+ARG APP
+ARG TZ
+
+RUN apk add --no-cache make tzdata
+
+RUN cp /usr/share/zoneinfo/$TZ /etc/localtime &&  \
+    adduser  \
+        --disabled-password  \
+        --gecos "" \
+        --home "/nonexistent"  \
+        --shell "/sbin/nologin"  \
+        --no-create-home  \
+        --uid "100001"  \
+        "appuser"
+
+COPY . /go/workspace/
+WORKDIR /go/workspace/$APP
+
+RUN --mount=type=cache,id=gomod,target=/go/pkg/mod go mod tidy && go build -ldflags '-s -w' -o dist/app
+
+FROM alpine:latest
+ARG APP
+
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+COPY --from=builder /etc/localtime /etc/localtime
+
+COPY --from=builder /go/workspace/$APP/dist/app /usr/local/bin/app
+
+RUN mkdir -p /var/log/app && chown appuser /var/log/app
+USER appuser
+VOLUME /var/log/app
+EXPOSE 8080
+
+ENTRYPOINT ["app"]
