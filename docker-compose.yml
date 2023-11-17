@@ -85,7 +85,7 @@ services:
       - api_net
       - user_db_net
   db-user:
-    image: mongo:latest
+    image: mongo:5.0.22
     restart: on-failure
     container_name: db-user
     environment:
@@ -145,7 +145,7 @@ services:
       - api_net
       - group_db_net
   db-group:
-    image: mongo:latest
+    image: mongo:5.0.22
     restart: on-failure
     container_name: db-group
     environment:
@@ -188,7 +188,7 @@ services:
       - doc_db_net
       - kafaka_net
   db-doc:
-    image: mongo:latest
+    image: mongo:5.0.22
     restart: on-failure
     container_name: db-doc
     environment:

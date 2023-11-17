@@ -1,7 +1,7 @@
 version: "3.4"
 services:
   db-user-dev:
-    image: mongo:latest
+    image: mongo:5.0.22
     restart: on-failure
     container_name: db-user-dev
     environment:
@@ -13,7 +13,7 @@ services:
     ports:
       - 27017:27017
   db-group-dev:
-    image: mongo:latest
+    image: mongo:5.0.22
     restart: on-failure
     container_name: db-group-dev
     environment:
@@ -25,7 +25,7 @@ services:
     ports:
       - 27018:27017
   db-doc-dev:
-    image: mongo:latest
+    image: mongo:5.0.22
     restart: on-failure
     container_name: db-doc-dev
     environment:
