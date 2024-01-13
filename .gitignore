@@ -52,3 +52,16 @@ pnpm-debug.log*
 *.sw?
 
 /nginx/logs
+
+.gradle
+build
+.protobuf
+.cache
+
+.flattened-pom.xml
+
+dist
+/data
+generated
+node_modules
+
