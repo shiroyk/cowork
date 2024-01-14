@@ -37,7 +37,7 @@ func subscribe() *nats.Subscription {
 
 		// consume the message from stream
 		switch cm.Event {
-		case docapi.SaveEvent:
+		case docapi.EventSave:
 			client, ok := hub.clients[cm.Uid]
 			if ok {
 				client.Write(msg.Data)

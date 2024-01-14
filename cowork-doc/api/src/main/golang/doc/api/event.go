@@ -1,15 +1,15 @@
 package api
 
 // Event of collab
-type Event int
+type Event uint8
 
 const (
 	_ Event = iota
-	LoginEvent
-	LogoutEvent
-	SyncEvent
-	UpdateEvent
-	SaveEvent
+	EventLogin
+	EventLogout
+	EventSync
+	EventUpdate
+	EventSave
 )
 
 const (
@@ -19,11 +19,11 @@ const (
 )
 
 var eventSubjects = [...]string{
-	LoginEvent:  subjectPrefix + "login",
-	LogoutEvent: subjectPrefix + "logout",
-	SyncEvent:   subjectPrefix + "sync",
-	UpdateEvent: subjectPrefix + "update",
-	SaveEvent:   subjectPrefix + "save",
+	EventLogin:  subjectPrefix + "login",
+	EventLogout: subjectPrefix + "logout",
+	EventSync:   subjectPrefix + "sync",
+	EventUpdate: subjectPrefix + "update",
+	EventSave:   subjectPrefix + "save",
 }
 
 func (e Event) String() string { return eventSubjects[e] }

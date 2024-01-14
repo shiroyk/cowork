@@ -7,13 +7,13 @@ import (
 )
 
 // Permission the project permissions
-type Permission uint
+type Permission uint8
 
 const (
-	Empty Permission = iota
-	Read
-	Comment
-	Write
+	PermissionEmpty Permission = iota
+	PermissionRead
+	PermissionComment
+	PermissionWrite
 )
 
 // ErrorMessage the error message

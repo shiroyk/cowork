@@ -84,13 +84,13 @@ func (h *Hub) login(client *Client) {
 	h.Unlock()
 
 	{ // online users
-		msg := docapi.CollabMessage{docapi.LoginEvent, client.uid, client.did, redisDocUsers(client, actLogin)}
+		msg := docapi.CollabMessage{Event: docapi.EventLogin, Uid: client.uid, Did: client.did, Data: redisDocUsers(client, actLogin)}
 		data, _ := msgpack.Marshal(msg)
 		h.broadcast("", msg.Did, data)
 	}
 
 	{ // sync doc nodes
-		msg := docapi.CollabMessage{docapi.SyncEvent, client.uid, client.did, docNodes(client)}
+		msg := docapi.CollabMessage{Event: docapi.EventSync, Uid: client.uid, Did: client.did, Data: docNodes(client)}
 		data, _ := msgpack.Marshal(msg)
 		client.Write(data)
 	}
@@ -115,7 +115,7 @@ func (h *Hub) logout(client *Client) {
 	if users == nil {
 		return
 	}
-	msg := docapi.CollabMessage{docapi.LogoutEvent, client.uid, client.did, users}
+	msg := docapi.CollabMessage{Event: docapi.EventLogout, Uid: client.uid, Did: client.did, Data: users}
 	data, _ := msgpack.Marshal(msg)
 	h.broadcast("", msg.Did, data)
 }
@@ -123,8 +123,9 @@ func (h *Hub) logout(client *Client) {
 type action int
 
 const (
-	actLogin  action = 1
-	actLogout action = -1
+	_ action = iota
+	actLogin
+	actLogout
 )
 
 var actionScript = redis.NewScript(`

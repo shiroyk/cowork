@@ -55,7 +55,7 @@ func wsHandle(ctx *gin.Context) {
 				break
 			}
 
-			// publish to eventSubcribe
+			// publish to stream
 			if err = nc().PublishMsg(&nats.Msg{Subject: msg.Event.Subject(), Data: data, Header: msgHeader}); err != nil {
 				slog.Warn("failed publish message", slog.String("error", err.Error()),
 					slog.String("user_id", client.uid), slog.String("request_id", client.rid), streamKey)
