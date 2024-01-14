@@ -25,7 +25,6 @@ subprojects {
     dependencyManagement {
         imports {
             mavenBom(rootProject.libs.spring.boot.bom.get().toString())
-            mavenBom(rootProject.libs.spring.cloud.bom.get().toString())
         }
     }
 }
