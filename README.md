@@ -1,8 +1,26 @@
 # Cowork
-![GitHub language count](https://img.shields.io/github/languages/count/shiroyk/Cowork)
-![GitHub last commit](https://img.shields.io/github/last-commit/shiroyk/Cowork)
-
 **Cowork** is an online real-time collaborative editing system, internal use of [Yjs CRDT](https://github.com/yjs/yjs) algorithm.
+
+## Usage
+Install dependencies `docker`, [docker-buildx](https://github.com/docker/buildx), [minikube](https://minikube.sigs.k8s.io/docs/), `kubectl` and start the `minikube`
+- build the image
+```shell
+chmod +x ./scripts/*
+make
+```
+- deployment
+```shell
+kubectl apply -f ./k8s
+```
+- update hosts, need permission to modify the hosts file.
+```shell
+sudo ./scripts/host.sh
+```
+waiting all pods start, execute to view the pods status
+```shell
+kubectl get pods -n cowork
+```
+open the [app.cowork.local](http://app.cowork.local)
 
 ## TODO
 - [ ] usage

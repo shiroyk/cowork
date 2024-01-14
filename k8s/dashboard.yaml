@@ -347,10 +347,10 @@ spec:
   ingressClassName: "nginx"
   tls:
     - hosts:
-        - dashboard.k8s.orb.local
+        - dashboard.cowork.local
       secretName: dashboard-letsencrypt-tls
   rules:
-    - host: dashboard.k8s.orb.local
+    - host: dashboard.cowork.local
       http:
         paths:
           - path: /
