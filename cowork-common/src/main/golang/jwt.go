@@ -12,6 +12,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const (
+	prefixBlackListToken = "BLACKLIST_TOKEN_"
+)
+
 var jwtSecret = sync.OnceValue(func() []byte {
 	secret := os.Getenv("JWT_SECRET_KEY")
 	if secret == "" {
@@ -63,7 +67,7 @@ func NewRefreshToken(jti, issuer, subject string, expireAt time.Time) (string, e
 
 // IsTokenIdRevoked checks the token claims id is in blacklist.
 func IsTokenIdRevoked(ctx context.Context, tokenId string) (bool, error) {
-	i, err := RedisClient().Exists(ctx, PrefixBlackListToken+tokenId).Result()
+	i, err := RedisClient().Exists(ctx, prefixBlackListToken+tokenId).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return false, nil
@@ -75,6 +79,6 @@ func IsTokenIdRevoked(ctx context.Context, tokenId string) (bool, error) {
 
 // RevokeTokenId set token claims id is to blacklist.
 func RevokeTokenId(ctx context.Context, tokenId string, expiration time.Duration) error {
-	_, err := RedisClient().Set(ctx, PrefixBlackListToken+tokenId, true, expiration).Result()
+	_, err := RedisClient().Set(ctx, prefixBlackListToken+tokenId, true, expiration).Result()
 	return err
 }

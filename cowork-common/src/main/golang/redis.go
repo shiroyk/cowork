@@ -7,10 +7,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const (
-	PrefixBlackListToken = "BLACKLIST_TOKEN_"
-)
-
 // RedisClient returns the redis client instance
 var RedisClient = sync.OnceValue(func() redis.UniversalClient {
 	if IsDev() {
