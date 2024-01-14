@@ -18,6 +18,9 @@ spec:
         app: auth
     spec:
       initContainers:
+        - name: wait-redis
+          image: registry.k8s.io/busybox:1.24
+          command: [ 'sh', '-c', 'until nslookup redis-service; do echo waiting for redis-service; sleep 2; done;' ]
         - name: wait-user
           image: registry.k8s.io/busybox:1.24
           command: [ 'sh', '-c', 'until nslookup user-service; do echo waiting for user-service; sleep 2; done;' ]

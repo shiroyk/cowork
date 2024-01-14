@@ -76,10 +76,6 @@ data:
       data:
         mongodb:
           uri: ${USER_DB_URL}
-    grpc:
-      client:
-        user:
-          address: dns:/user-service:9090
     logging:
       file:
         path: /var/log/app
@@ -96,10 +92,6 @@ data:
       data:
         mongodb:
           uri: ${DOC_DB_URL}
-    grpc:
-      client:
-        user:
-          address: dns:/doc-service:9090
     nats:
       spring:
         server: ${NATS-URL}
