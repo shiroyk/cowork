@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import org.msgpack.jackson.dataformat.MessagePackFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.core.env.Environment
@@ -36,6 +37,7 @@ import kotlin.jvm.optionals.getOrNull
  * doc update event consume
  */
 @Service
+@RegisterReflectionForBinding(CollabMessage::class)
 open class DocUpdateEventConsumer(
     private val nc: Connection,
     private val env: Environment,
@@ -83,39 +85,38 @@ open class DocUpdateEventConsumer(
     /**
      * persistence the update message
      */
-    private fun persistence(list: List<Message>) {
-        val msg = list.map { mapper.readValue(it.data, CollabMessage::class.java) }
-        val nodes = msg.filter { it.data != null }
-            .map { DocNode(it.did, it.uid, it.data!!) }
+    private fun persistence(list: List<Message>) = transaction.executeWithoutResult { tans ->
+        runCatching {
+            val msg = list.map { mapper.readValue(it.data, CollabMessage::class.java) }
+            val nodes = msg.filter { it.data != null }
+                .map { DocNode(it.did, it.uid, it.data!!) }
 
-        transaction.executeWithoutResult { tans ->
-            runCatching {
-                nodeService.insert(nodes)
-                val now = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
-                val nowData = mapper.writeValueAsBytes(now)
-                val saved = nodes.groupBy { it.did }
-                    .mapValues { l -> l.value.mapTo(HashSet()) { it.uid } }
-                for (kv in saved) {
-                    val origin: DocEntity = service.findById(kv.key).getOrNull() ?: continue
-                    origin.updatedAt = now
-                    // publish save message
-                    for (uid in kv.value) {
-                        origin.clients[uid]?.updateAt = now
-                        val collabMessage = CollabMessage(Event.Save, uid, kv.key, nowData)
-                        nc.publish(Event.Save.subject, mapper.writeValueAsBytes(collabMessage))
-                    }
-                    service.save(origin)
+            nodeService.insert(nodes)
+            val now = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
+            val nowData = mapper.writeValueAsBytes(now)
+            val saved = nodes.groupBy { it.did }
+                .mapValues { l -> l.value.mapTo(HashSet()) { it.uid } }
+            for (kv in saved) {
+                val origin: DocEntity = service.findById(kv.key).getOrNull() ?: continue
+                origin.updatedAt = now
+                // publish save message
+                for (uid in kv.value) {
+                    origin.clients[uid]?.updateAt = now
+                    val collabMessage = CollabMessage(Event.Save, uid, kv.key, nowData)
+                    nc.publish(Event.Save.subject, mapper.writeValueAsBytes(collabMessage))
                 }
-
-                for (it in list) {
-                    it.ack()
-                }
-            }.onFailure {
-                tans.setRollbackOnly()
-                log.warn("failed persistence doc updates: {}", it.message)
+                service.save(origin)
             }
+
+            for (it in list) {
+                it.ack()
+            }
+        }.onFailure {
+            tans.setRollbackOnly()
+            log.warn("failed persistence doc updates: {}", it.message)
         }
     }
+
 
     override fun destroy() {
         sub.unsubscribe()
