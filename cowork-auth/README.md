@@ -1,3 +1,5 @@
+# Auth sequence diagrams
+
 ## /auth/sign_in
 ```mermaid
 %%{init:{ "sequence": { "messageAlign": "left"} }}%%
@@ -81,6 +83,7 @@ sequenceDiagram
     participant nginx as Nginx ingress
     participant auth as Auth Service
     participant redis as Redis Service
+    participant user as User Service
 
     client ->> nginx: HTTP POST /auth/logout <br> Authorization: bearer ...
     activate nginx

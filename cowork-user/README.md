@@ -1,3 +1,5 @@
+# User sequence diagrams
+
 ## /users
 ```mermaid
 %%{init:{ "sequence": { "messageAlign": "left"} }}%%
