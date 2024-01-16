@@ -2,7 +2,7 @@
 
 ## /collab/{did}
 ```mermaid
-%%{init:{ "sequence": { "messageAlign": "left"} }}%%
+%%{init:{ "sequence": { "messageAlign": "left", "width": 300 } }}%%
 sequenceDiagram
     autonumber
     actor client as Client
@@ -82,7 +82,7 @@ sequenceDiagram
             deactivate nats
             collab -->> nginx: MSG events.save <br> {event: Save...}
             deactivate collab
-            nginx -->> client: MSG events.save <br> {event: Save...}
+            nginx -->> client: Websocket <br> {event: Save...}
         end
         deactivate nginx
     end

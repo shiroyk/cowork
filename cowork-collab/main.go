@@ -31,7 +31,7 @@ var (
 var (
 	wsKey     = slog.String("source", "ws")
 	grpcKey   = slog.String("source", "grpc")
-	streamKey = slog.String("source", "eventSubcribe")
+	streamKey = slog.String("source", "event")
 )
 
 func engine() *gin.Engine {

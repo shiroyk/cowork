@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
-	"github.com/nats-io/nats.go"
 	common "github.com/shiroyk/cowork/common/src/main/golang"
 	docapi "github.com/shiroyk/cowork/doc/api/src/main/golang/doc/api"
 	"github.com/vmihailenco/msgpack/v5"
@@ -55,12 +54,7 @@ func wsHandle(ctx *gin.Context) {
 				break
 			}
 
-			// publish to stream
-			if err = nc().PublishMsg(&nats.Msg{Subject: msg.Event.Subject(), Data: data, Header: msgHeader}); err != nil {
-				slog.Warn("failed publish message", slog.String("error", err.Error()),
-					slog.String("user_id", client.uid), slog.String("request_id", client.rid), streamKey)
-			}
-			hub.broadcast(msg.Uid, msg.Did, data)
+			hub.broadcast(msg.Event, msg.Uid, msg.Did, data)
 		}
 	}()
 }

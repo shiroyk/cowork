@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gobwas/ws/wsutil"
+	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 	common "github.com/shiroyk/cowork/common/src/main/golang"
 	docapi "github.com/shiroyk/cowork/doc/api/src/main/golang/doc/api"
@@ -57,9 +58,14 @@ func newHub() *Hub {
 }
 
 // broadcast the channels, if uid not empty, skip the user client
-func (h *Hub) broadcast(uid, did string, data []byte) {
+func (h *Hub) broadcast(event docapi.Event, uid, did string, data []byte) {
 	h.Lock()
 	defer h.Unlock()
+	// publish to stream
+	if err := nc().PublishMsg(&nats.Msg{Subject: event.Subject(), Data: data, Header: msgHeader}); err != nil {
+		slog.Warn("failed publish message", slog.String("error", err.Error()),
+			slog.String("user_id", uid), streamKey)
+	}
 	clients, ok := h.channels[did]
 	if !ok {
 		return
@@ -86,7 +92,7 @@ func (h *Hub) login(client *Client) {
 	{ // online users
 		msg := docapi.CollabMessage{Event: docapi.EventLogin, Uid: client.uid, Did: client.did, Data: redisDocUsers(client, actLogin)}
 		data, _ := msgpack.Marshal(msg)
-		h.broadcast("", msg.Did, data)
+		h.broadcast(docapi.EventLogin, "", msg.Did, data)
 	}
 
 	{ // sync doc nodes
@@ -117,7 +123,7 @@ func (h *Hub) logout(client *Client) {
 	}
 	msg := docapi.CollabMessage{Event: docapi.EventLogout, Uid: client.uid, Did: client.did, Data: users}
 	data, _ := msgpack.Marshal(msg)
-	h.broadcast("", msg.Did, data)
+	h.broadcast(docapi.EventLogout, "", msg.Did, data)
 }
 
 type action int
