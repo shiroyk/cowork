@@ -66,7 +66,6 @@ make
 ```
 - deployment
 ```shell
-kubectl create ns cowork && kubectl create ns ingress-nginx
 kubectl apply -f ./k8s
 ```
 - update hosts, need permission to modify the hosts file.
