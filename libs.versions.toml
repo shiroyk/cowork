@@ -31,8 +31,6 @@ nats-spring-boot-starter = { group = "io.nats", name = "nats-spring-boot-starter
 
 msgpack = { group = "org.msgpack", name = "jackson-dataformat-msgpack", version = "0.9.6" }
 
-google-native-image-support = { group = "com.google.cloud", name = "native-image-support", version = "0.14.1" }
-
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
 
 javax-annotation = { group = "javax.annotation", name = "javax.annotation-api", version.ref = "javax" }
