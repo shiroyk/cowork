@@ -70,7 +70,12 @@ kubectl apply -f ./k8s
 ```
 - update hosts, need permission to modify the hosts file.
 ```shell
-sudo ./scripts/host.sh
+export INGRESS_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o=jsonpath='{.spec.clusterIP}')
+sudo cat << EOF >> /etc/hosts
+$INGRESS_IP api.cowork.local
+$INGRESS_IP app.cowork.local
+$INGRESS_IP dashboard.cowork.local
+EOF
 ```
 - waiting all pods start, execute to view the pods status
 ```shell
