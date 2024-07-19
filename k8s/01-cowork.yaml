@@ -119,7 +119,7 @@ metadata:
   namespace: cowork
 data:
   init.sh: |
-    until mongosh --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' &>/dev/null; do echo "waiting db"; sleep 2; done
+    until mongosh --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' &>/dev/null; do echo "waiting db"; sleep 5; done
     if [[ "$(hostname)" =~ ^[a-z-]+0 ]]; then
       mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --eval \
       "rs.initiate({\"_id\":\"rs0\",\"members\":[{\"_id\":0,\"host\":\"$(hostname -f):27017\"}]})"
