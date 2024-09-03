@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth
+  name: doc
   namespace: cowork
 spec:
   selector:
     matchLabels:
-      app: auth
+      app: doc
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -15,72 +15,81 @@ spec:
   template:
     metadata:
       labels:
-        app: auth
+        app: doc
     spec:
       initContainers:
-        - name: wait-redis
+        - name: wait-db-doc
           image: alpine:3.16
-          command: [ 'sh', '-c', 'until nc -vz redis-service 6379; do echo waiting for redis-service; sleep 2; done;' ]
-        - name: wait-user
+          command: [ 'sh', '-c', 'until nc -vz db-doc-service 27017; do echo waiting for db-doc-service; sleep 2; done;' ]
+        - name: wait-nats
           image: alpine:3.16
-          command: [ 'sh', '-c', 'until nc -vz user-service 9090; do echo waiting for user-service; sleep 2; done;' ]
+          command: [ 'sh', '-c', 'until nc -vz nats-service 4222; do echo waiting for nats-service; sleep 2; done;' ]
       containers:
-        - name: auth
-          image: cowork-auth:latest
+        - name: doc
+          image: cowork-doc:latest
           imagePullPolicy: Never
           env:
-            - name: PROFILE
+            - name: SPRING_PROFILES_ACTIVE
               value: "k8s"
           envFrom:
-            - configMapRef:
-                name: auth-config
             - secretRef:
-                name: jwt-secret
+                name: doc-db-url
             - secretRef:
-                name: redis-url
+                name: nats-url
+          volumeMounts:
+            - name: spring-config
+              mountPath: /etc/spring-config/
           ports:
             - containerPort: 8080
+            - containerPort: 9090
           resources:
             limits:
-              cpu: 50m
-              memory: 128Mi
+              memory: 512Mi
           readinessProbe:
             httpGet:
-              path: /ping
+              path: /actuator/health
               port: 8080
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 3
+      volumes:
+        - name: spring-config
+          configMap:
+            name: doc-config
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth-service
+  name: doc-service
   namespace: cowork
 spec:
   type: NodePort
   selector:
-    app: auth
+    app: doc
   ports:
     - protocol: "TCP"
       port: 8080
       targetPort: 8080
       name: http
+    - protocol: "TCP"
+      port: 9090
+      targetPort: 9090
+      name: grpc
 
 ---
 
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: auth-hpa
+  name: doc-hpa
   namespace: cowork
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: auth
+    name: doc
   minReplicas: 1
   maxReplicas: 3
   metrics:

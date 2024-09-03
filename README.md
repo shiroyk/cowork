@@ -64,9 +64,9 @@ Install dependencies `docker`, [docker-buildx](https://github.com/docker/buildx)
 chmod +x ./scripts/*
 make
 ```
-- deployment
+- start
 ```shell
-kubectl apply -f ./k8s
+./scripts/start.sh
 ```
 - update hosts, need permission to modify the hosts file.
 ```shell
@@ -81,13 +81,9 @@ EOF
 ```shell
 kubectl get pods -n cowork
 ```
-open the [app.cowork.local](http://app.cowork.local)
-
-## TODO
-- [ ] usage
-- [ ] document
-- [ ] cowork-frontend
-- [ ] cowork-group
+open the page
+- [app.cowork.local](http://app.cowork.local)
+- [dashboard.cowork.local](https://dashboard.cowork.local)
 
 ## Reference
 - [Yjs](https://github.com/yjs/yjs)

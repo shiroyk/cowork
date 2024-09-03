@@ -39,13 +39,12 @@ spec:
             - containerPort: 9090
           resources:
             limits:
-              cpu: 100m
               memory: 512Mi
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 3
       volumes:

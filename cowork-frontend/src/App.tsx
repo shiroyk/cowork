@@ -197,7 +197,7 @@ function App() {
     const uid = getUserId();
     addDoc(token, uid);
     const ws = new WebSocket(
-      `ws://${baseURL.replace("http://", "")}/collab/1`,
+      `${baseURL}/collab/1`,
       token
     );
     ws.onopen = () => {
@@ -209,11 +209,9 @@ function App() {
         );
       });
     };
-    ws.onmessage = (e) => {
+    ws.onmessage = (e: MessageEvent<Blob>) => {
       (async () => {
-        const msg = (await decodeAsync(
-          await (e.data as Blob).stream()
-        )) as Message;
+        const msg = (await decodeAsync(await e.data.stream())) as Message;
         console.log(msg);
         handlers[msg.event]?.(msg);
       })();
