@@ -1,35 +1,36 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"sync"
 
 	"github.com/nats-io/nats.go"
-	common "github.com/shiroyk/cowork/common/src/main/golang"
-	docapi "github.com/shiroyk/cowork/doc/api/src/main/golang/doc/api"
+	common "github.com/shiroyk/cowork/common/golang"
+	"github.com/shiroyk/cowork/doc/api/golang/event"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-var nc = sync.OnceValue[*nats.Conn](func() *nats.Conn {
-	nc, err := nats.Connect(common.ProfileValue("nats://localhost:4222", os.Getenv("NATS_URL")))
+func newNats(cfg config) (*nats.Conn, func(), error) {
+	nc, err := nats.Connect(cfg.Nats)
 	if err != nil {
-		panic(err)
+		return nil, nil, fmt.Errorf("failed to connect nats: %w", err)
 	}
-	return nc
-})
+
+	return nc, func() { nc.Drain() }, nil
+}
 
 var (
-	hostname  = common.ProfileValue("dev", os.Getenv("HOSTNAME"))
-	msgHeader = nats.Header{docapi.HeaderSource: {hostname}}
+	hostname  = common.ProfileValue("collab-dev", os.Getenv("HOSTNAME"))
+	msgHeader = nats.Header{event.HeaderSource: {hostname}}
 )
 
-func subscribe() *nats.Subscription {
-	return common.Must1(nc().Subscribe("events.*", func(msg *nats.Msg) {
-		if msg.Header.Get(docapi.HeaderSource) == hostname {
+func (hub *Hub) subscribe() *nats.Subscription {
+	sub, err := hub.nats.Subscribe("events.*", func(msg *nats.Msg) {
+		if msg.Header.Get(event.HeaderSource) == hostname {
 			// ignore msg from local
 			return
 		}
-		var cm docapi.CollabMessage
+		var cm event.CollabMessage
 		err := msgpack.Unmarshal(msg.Data, &cm)
 		if err != nil {
 			return
@@ -37,7 +38,7 @@ func subscribe() *nats.Subscription {
 
 		// consume the message from stream
 		switch cm.Event {
-		case docapi.EventSave, docapi.EventSync:
+		case event.Save, event.Sync:
 			client, ok := hub.clients[cm.Uid]
 			if ok {
 				client.Write(msg.Data)
@@ -51,5 +52,11 @@ func subscribe() *nats.Subscription {
 				client.Write(msg.Data)
 			}
 		}
-	}))
+	})
+
+	if err != nil {
+		panic(fmt.Errorf("failed to subscribe events: %w", err))
+	}
+
+	return sub
 }

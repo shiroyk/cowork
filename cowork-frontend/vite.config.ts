@@ -10,7 +10,7 @@ export default defineConfig({
     cors: true,
     proxy: {
       "/api": {
-        target: "http://api.cowork.local",
+        target: "http://localhost:8080",
         rewrite: (path) => path.replace(/^\/api/, ""),
         changeOrigin: true,
         secure: false,

@@ -4,15 +4,50 @@ metadata:
   name: db-user-secret
   namespace: cowork
 data:
-  replica.key: |
-    dkR1ZHZHdWFxaDk5dGM2UVBjelIrdUUzUUFVQU11S3FIYUxjd01mdWcxbTM5bTJoSG96RENnbGNFMDl2ampmMQpy
-    RG9GTFpvWU0yR205QU8vL2gyYXpUUDYxbHNEd3RFWnRmazVTdkdwcld6NDVXT2Q4cCtxMFlPb3UvdE4yd2FLCjA0
-    WFdENTJwdU5lcHFRc1Rrd1lIeERYWVFoeEcreWJYbU81MG55Y2xuUW9VekFMTHdHREVFZkFxbWlnYVhESHcKYlE2
-    VmFFQmlmY3ozQ2ZNNDdqSUNFRnlxL21PQVJ0NERMQUtCc1RjRHYrejZ2V2hDSDZHYkN2S3k4VEJDTjFLLwpiMUFs
-    d0xucTJLZW5jYmx1UFVJVlZVc0V0dnU3bndLOExHd1NhZWt1L3FNYng1S1p2VnhmOU9YUU5yUlM2dEZMCk9VSmMx
-    UEUyV0ZmQUJIbW9uWEY4WEE9PQ==
-  PASSWORD: |
-    dXNlcjEyMzQ1Ng==
+  password: dXNlcjEyMzQ1Ng==
+  root-password: Y293b3JrLXVzZXI=
+  repl_secret: Y293b3JrLXVzZXJAcmVwbA==
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-user-script
+  namespace: cowork
+data:
+  init.sh: |
+    set -ex
+    echo 'starting init user db';
+    [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+    ordinal=${BASH_REMATCH[1]}
+    if [[ $ordinal -eq 0 ]]; then
+    cat << EOF >> /docker-entrypoint-initdb.d/init.sql
+    CREATE USER 'repl_user'@'%' IDENTIFIED BY '${REPL_SECRET}';
+    GRANT REPLICATION REPLICA ON *.* TO 'repl_user'@'%';
+    CREATE DATABASE cowork_user;
+    CREATE USER '${MARIADB_USER}'@'%' IDENTIFIED BY '${MARIADB_PASSWORD}';
+    GRANT ALL PRIVILEGES ON cowork_user.* TO '${MARIADB_USER}'@'%';
+    FLUSH PRIVILEGES;
+    EOF
+    else
+    cat << EOF >> /docker-entrypoint-initdb.d/init.sql
+    CHANGE MASTER TO 
+    MASTER_HOST='$(hostname -f | sed -e "s/[0-9]\./0./")',
+    MASTER_USER='repl_user',
+    MASTER_PASSWORD='${REPL_SECRET}',
+    MASTER_PORT=3306,
+    MASTER_CONNECT_RETRY=10;
+    EOF
+    fi
+    cat /docker-entrypoint-initdb.d/init.sql
+    cat << EOF >> /etc/mysql/conf.d/server-id.cnf
+    [mariadb]
+    log-bin
+    log-basename=cowork-user
+    EOF
+    echo server-id=$((3000 + $ordinal)) >> etc/mysql/conf.d/server-id.cnf
+    cat /etc/mysql/conf.d/server-id.cnf
 
 ---
 
@@ -25,8 +60,8 @@ spec:
   selector:
     app: db-user
   ports:
-    - port: 27017
-      targetPort: 27017
+    - port: 3306
+      targetPort: 3306
 
 ---
 
@@ -46,56 +81,61 @@ spec:
       labels:
         app: db-user
     spec:
+      initContainers:
+        - name: init-mariadb
+          image: mariadb:10.11
+          imagePullPolicy: Always
+          command:
+            - bash
+            - /tmp/script/init.sh
+          volumeMounts:
+            - name: db-script
+              mountPath: /tmp/script/
+            - name: db-config
+              mountPath: /etc/mysql/conf.d/
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+          env:
+            - name: MARIADB_USER
+              value: user
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-user-secret
+            - name: REPL_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: repl_secret
+                  name: db-user-secret
       containers:
-        - name: mongo
-          image: mongo:7.0.2
+        - name: mariadb
+          image: mariadb:10.11
           imagePullPolicy: IfNotPresent
-          command: [bash, /tmp/script/start.sh]
-          readinessProbe:
-            exec:
-              command:
-                - echo
-                - db.runCommand("ping").ok
-                - '|'
-                - mongosh
-                - localhost:27017/test
-                - --quiet
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 3
           resources:
             limits:
               memory: 256Mi
           env:
-            - name: MONGO_INITDB_DATABASE
-              value: "user"
-            - name: MONGO_INITDB_ROOT_USERNAME
-              value: "user"
-            - name: MONGO_INITDB_ROOT_PASSWORD
+            - name: MARIADB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: PASSWORD
+                  key: root-password
                   name: db-user-secret
           volumeMounts:
-            - name: key-dir
-              mountPath: /data/security
-            - name: db-script
-              mountPath: /tmp/script
             - name: db-user-data
-              mountPath: /data/db
-            - name: db-user-secret
-              mountPath: /tmp/key
+              mountPath: /var/lib/mysql/
+            - name: db-config
+              mountPath: /etc/mysql/conf.d/
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
       volumes:
-        - name: key-dir
-          emptyDir: {}
         - name: db-script
           configMap:
-            name: db-script
-        - name: db-user-secret
-          secret:
-            secretName: db-user-secret
+            name: db-user-script
+        - name: db-config
+          emptyDir: {}
+        - name: initdb
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: db-user-data

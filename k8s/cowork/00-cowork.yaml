@@ -41,7 +41,7 @@ metadata:
   name: user-db-url
   namespace: cowork
 data:
-  USER_DB_URL: bW9uZ29kYjovL3VzZXI6dXNlcjEyMzQ1NkBkYi11c2VyLXNlcnZpY2U6MjcwMTcvdXNlcj9hdXRoU291cmNlPWFkbWluJnJlcGxpY2FTZXQ9cnMwJnJlYWRQcmVmZXJlbmNlPXByaW1hcnk=
+  USER_DB_URL: dXNlcjp1c2VyMTIzNDU2QHRjcChkYi11c2VyLXNlcnZpY2U6MzMwNikvY293b3JrX3VzZXI/Y2hhcnNldD11dGY4bWI0JnBhcnNlVGltZT1UcnVlJmxvYz1Mb2NhbA==
 
 ---
 
@@ -51,7 +51,7 @@ metadata:
   name: doc-db-url
   namespace: cowork
 data:
-  DOC_DB_URL: bW9uZ29kYjovL2RvYzpkb2MxMjM0NTZAZGItZG9jLXNlcnZpY2U6MjcwMTcvZG9jP2F1dGhTb3VyY2U9YWRtaW4mcmVwbGljYVNldD1yczAmcmVhZFByZWZlcmVuY2U9cHJpbWFyeQ==
+  DOC_DB_URL: bW9uZ29kYjovL2RvYzpkb2MxMjM0NTZAZGItZG9jLXNlcnZpY2U6MjcwMTcvY293b3JrX2RvYz9hdXRoU291cmNlPWFkbWluJnJlcGxpY2FTZXQ9cnMwJnJlYWRQcmVmZXJlbmNlPXByaW1hcnk=
 
 ---
 
@@ -61,7 +61,10 @@ metadata:
   name: auth-config
   namespace: cowork
 data:
-  USER_GRPC_SERVICE: "user-service:9090"
+  config.yaml: |-
+    redis: ${REDIS_URL}
+    grpc-user: ${USER_SERVICE_SERVICE_HOST}:${USER_SERVICE_SERVICE_PORT_GRPC}
+    jwt-secret: ${JWT_SECRET}
 
 ---
 
@@ -71,14 +74,9 @@ metadata:
   name: user-config
   namespace: cowork
 data:
-  application.yml: |-
-    spring:
-      data:
-        mongodb:
-          uri: ${USER_DB_URL}
-    logging:
-      file:
-        path: /var/log/app
+  config.yaml: |-
+    mysql: ${USER_DB_URL}
+
 ---
 
 kind: ConfigMap
@@ -87,17 +85,11 @@ metadata:
   name: doc-config
   namespace: cowork
 data:
-  application.yml: |-
-    spring:
-      data:
-        mongodb:
-          uri: ${DOC_DB_URL}
-    nats:
-      spring:
-        server: ${NATS-URL}
-    logging:
-      file:
-        path: /var/log/app
+  config.yaml: |-
+    mongodb: ${DOC_DB_URL}
+    nats: ${NATS_URL}
+    stream:
+      wait: 10
 
 ---
 
@@ -107,32 +99,11 @@ metadata:
   name: collab-config
   namespace: cowork
 data:
-  USER_GRPC_SERVICE: "user-service:9090"
-  DOC_GRPC_SERVICE: "doc-service:9090"
-
----
-
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: db-script
-  namespace: cowork
-data:
-  init.sh: |
-    until mongosh --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' &>/dev/null; do echo "waiting db"; sleep 5; done
-    if [[ "$(hostname)" =~ ^[a-z-]+0 ]]; then
-      mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --eval \
-      "rs.initiate({\"_id\":\"rs0\",\"members\":[{\"_id\":0,\"host\":\"$(hostname -f):27017\"}]})"
-    else
-      mongosh mongodb://$(hostname -f | sed -e 's/[0-9]\./0./'):27017 -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --eval \
-      "rs.add('$(hostname -f):27017')"
-    fi
-  start.sh: |
-    cp /tmp/key/replica.key /data/security/replica.key
-    chmod 400 /data/security/replica.key
-    chown 999:999 /data/security/replica.key
-    bash /tmp/script/init.sh &
-    docker-entrypoint.sh mongod --replSet rs0 --keyFile /data/security/replica.key
+  config.yaml: |-
+    redis: ${REDIS_URL}
+    nats: ${NATS_URL}
+    grpc-doc: ${DOC_SERVICE_SERVICE_HOST}:${DOC_SERVICE_SERVICE_PORT_GRPC}
+    grpc-user: ${USER_SERVICE_SERVICE_HOST}:${USER_SERVICE_SERVICE_PORT_GRPC}
 
 ---
 

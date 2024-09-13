@@ -9,9 +9,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	common "github.com/shiroyk/cowork/common/src/main/golang"
-	userapi "github.com/shiroyk/cowork/user/api/src/generated/golang/user/api"
-	"github.com/shiroyk/cowork/user/api/src/main/golang/user/client"
+	common "github.com/shiroyk/cowork/common/golang"
+	userapi "github.com/shiroyk/cowork/user/api/generated/golang/api"
+	userclient "github.com/shiroyk/cowork/user/api/golang/client"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -26,15 +26,23 @@ var (
 	emailRegex      = regexp.MustCompile("^[a-zA-Z0-9_.]+@[a-z0-9]+\\.[a-z]+$")
 )
 
-func init() {
-	router.POST("/api/sign_in", signIn)
-	router.POST("/api/sign_up", signUp)
-	router.POST("/api/refresh", refresh)
-	router.POST("/api/logout", logout)
-	router.POST("/api/logout/:id", logout)
-	router.POST("/api/ping", ping)
-	router.GET("/auth", auth)
-	router.GET("/ping", func(c echo.Context) error { return c.NoContent(http.StatusOK) })
+type router struct {
+	token *tokenService
+	user  *userclient.Client
+}
+
+func newRouter(token *tokenService, user *userclient.Client) *router {
+	return &router{token, user}
+}
+
+func (r *router) enable(e *echo.Echo) {
+	e.POST("/api/sign_in", r.signIn)
+	e.POST("/api/sign_up", r.signUp)
+	e.POST("/api/refresh", r.refresh)
+	e.POST("/api/logout", r.logout)
+	e.POST("/api/logout/:id", r.logout)
+	e.POST("/api/ping", r.ping)
+	e.GET("/auth", r.auth)
 }
 
 // validUser validates the User struct.
@@ -58,7 +66,7 @@ func validUser(user *userapi.User, checkEmail bool) error {
 }
 
 // signUp saves the user and return the user id.
-func signUp(c echo.Context) error {
+func (r *router) signUp(c echo.Context) error {
 	u := new(userapi.User)
 	err := c.Bind(u)
 	if err != nil {
@@ -74,7 +82,7 @@ func signUp(c echo.Context) error {
 	}
 	u.Password = string(password)
 
-	u1, err := client.UserServiceClient().Create(common.RequestMetadata(c.Request()), u)
+	u1, err := r.user.Create(common.GrpcMetadata(c.Request()), u)
 	if err != nil {
 		return err
 	}
@@ -84,7 +92,7 @@ func signUp(c echo.Context) error {
 }
 
 // signIn returns the jwt access_token and refresh_token.
-func signIn(c echo.Context) (err error) {
+func (r *router) signIn(c echo.Context) (err error) {
 	u := new(userapi.User)
 	err = c.Bind(u)
 	if err != nil {
@@ -95,7 +103,7 @@ func signIn(c echo.Context) (err error) {
 	}
 
 	var entity *userapi.User
-	entity, err = client.UserServiceClient().FindByName(common.RequestMetadata(c.Request()), wrapperspb.String(u.GetUsername()))
+	entity, err = r.user.FindByName(common.GrpcMetadata(c.Request()), wrapperspb.String(u.GetUsername()))
 	if err != nil {
 		return err
 	}
@@ -111,14 +119,14 @@ func signIn(c echo.Context) (err error) {
 		if session.GetClient() == clientId {
 			if session.GetTimestamp() > now.Unix() {
 				// revoke the token
-				err = common.RevokeTokenId(c.Request().Context(), session.GetId(), time.Unix(session.GetTimestamp(), 0).Sub(now))
+				err = r.token.RevokeTokenId(c.Request().Context(), session.GetId(), time.Unix(session.GetTimestamp(), 0).Sub(now))
 				if err != nil {
 					return err
 				}
 			}
 
 			// logout the session
-			_, err = client.UserServiceClient().SaveSession(common.RequestMetadata(c.Request()), &userapi.SessionAction{
+			_, err = r.user.SaveSession(common.GrpcMetadata(c.Request()), &userapi.SessionAction{
 				Action: userapi.SessionAction_Logout,
 				UserId: entity.GetId(),
 				Session: &userapi.Session{
@@ -136,11 +144,11 @@ func signIn(c echo.Context) (err error) {
 
 	// create token and refresh token
 	jti := uuid.New().String()
-	token, err := common.NewToken(jti, entity.GetId(), entity.GetUsername(), now.Add(tokenExpireTime))
+	token, err := r.token.NewToken(jti, entity.GetId(), entity.GetUsername(), now.Add(tokenExpireTime))
 	if err != nil {
 		return err
 	}
-	refreshToken, err := common.NewRefreshToken(jti, entity.GetId(), entity.GetUsername(), now.Add(refreshTokenExpireTime))
+	refreshToken, err := r.token.NewRefreshToken(jti, entity.GetId(), entity.GetUsername(), now.Add(refreshTokenExpireTime))
 	if err != nil {
 		return err
 	}
@@ -150,7 +158,7 @@ func signIn(c echo.Context) (err error) {
 		if err != nil {
 			return
 		}
-		_, err2 := client.UserServiceClient().SaveSession(common.RequestMetadata(c.Request()), &userapi.SessionAction{
+		_, err2 := r.user.SaveSession(common.GrpcMetadata(c.Request()), &userapi.SessionAction{
 			Action: userapi.SessionAction_SignIn,
 			UserId: entity.GetId(),
 			Session: &userapi.Session{
@@ -175,23 +183,23 @@ func signIn(c echo.Context) (err error) {
 }
 
 // refresh the user token.
-func refresh(c echo.Context) (err error) {
+func (r *router) refresh(c echo.Context) (err error) {
 	token := c.Request().Header.Get("X-Refresh-Token")
-	claims, err := common.ParseClaims(token)
+	claims, err := r.token.ParseClaims(token)
 	if err != nil {
-		return &common.ApiError{Code: http.StatusUnauthorized, Message: err.Error()}
+		return common.ApiError{Code: http.StatusUnauthorized, Message: err.Error()}
 	}
 	if len(claims.Audience) != 1 || claims.Audience[0] != "refresh_token" {
-		return &common.ApiError{Code: http.StatusUnauthorized, Message: "invalid refresh token"}
+		return common.ApiError{Code: http.StatusUnauthorized, Message: "invalid refresh token"}
 	}
 
-	revoked, err := common.IsTokenIdRevoked(c.Request().Context(), claims.ID)
+	revoked, err := r.token.IsTokenIdRevoked(c.Request().Context(), claims.ID)
 	if err != nil {
 		c.Logger().Errorf("error while check token claim revoke: %s", err)
 		return common.NewApiError(http.StatusInternalServerError)
 	}
 	if revoked {
-		return &common.ApiError{Code: http.StatusUnauthorized, Message: "refresh token expired"}
+		return common.ApiError{Code: http.StatusUnauthorized, Message: "refresh token expired"}
 	}
 
 	now := time.Now()
@@ -201,7 +209,7 @@ func refresh(c echo.Context) (err error) {
 			return
 		}
 
-		_, err2 := client.UserServiceClient().SaveSession(common.RequestMetadata(c.Request()), &userapi.SessionAction{
+		_, err2 := r.user.SaveSession(common.RequestMetadata(c.Request()), &userapi.SessionAction{
 			Action: userapi.SessionAction_Refresh,
 			UserId: claims.Issuer,
 			Session: &userapi.Session{
@@ -215,14 +223,14 @@ func refresh(c echo.Context) (err error) {
 		}
 	}()
 
-	newToken, err = common.NewToken(claims.ID, claims.Issuer, claims.Subject, now.Add(tokenExpireTime))
+	newToken, err = r.token.NewToken(claims.ID, claims.Issuer, claims.Subject, now.Add(tokenExpireTime))
 	if err != nil {
 		return err
 	}
 
 	// if the refresh token is about to expire, create a new refresh token
 	if claims.ExpiresAt.Sub(now) < tokenExpireTime {
-		newRefreshToken, err = common.NewRefreshToken(claims.ID, claims.Issuer, claims.Subject, now.Add(refreshTokenExpireTime))
+		newRefreshToken, err = r.token.NewRefreshToken(claims.ID, claims.Issuer, claims.Subject, now.Add(refreshTokenExpireTime))
 		if err != nil {
 			return err
 		}
@@ -241,14 +249,14 @@ func refresh(c echo.Context) (err error) {
 }
 
 // logout the system.
-func logout(c echo.Context) error {
-	userId := c.Request().Header.Get("X-User-Id")
+func (r *router) logout(c echo.Context) error {
+	userId := c.Request().Header.Get(common.HeaderUserID)
 	sessionId := c.Param("id")
 	var expiration time.Duration
 
 	if sessionId != "" {
 		// logout specific session
-		entity, err := client.UserServiceClient().FindById(common.RequestMetadata(c.Request()), wrapperspb.String(userId))
+		entity, err := r.user.FindById(common.GrpcMetadata(c.Request()), wrapperspb.String(userId))
 		if err != nil {
 			return err
 		}
@@ -261,7 +269,7 @@ func logout(c echo.Context) error {
 	} else {
 		// logout current session
 		token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
-		claims, err := common.ParseClaims(token)
+		claims, err := r.token.ParseClaims(token)
 		if err != nil {
 			return err
 		}
@@ -271,13 +279,13 @@ func logout(c echo.Context) error {
 
 	if expiration > 0 {
 		// revoke the token
-		if err := common.RevokeTokenId(c.Request().Context(), sessionId, expiration); err != nil {
+		if err := r.token.RevokeTokenId(c.Request().Context(), sessionId, expiration); err != nil {
 			return err
 		}
 	}
 
 	// logout the session
-	_, err := client.UserServiceClient().SaveSession(common.RequestMetadata(c.Request()), &userapi.SessionAction{
+	_, err := r.user.SaveSession(common.GrpcMetadata(c.Request()), &userapi.SessionAction{
 		Action: userapi.SessionAction_Logout,
 		UserId: userId,
 		Session: &userapi.Session{
@@ -294,14 +302,14 @@ func logout(c echo.Context) error {
 }
 
 // ping check the token.
-func ping(c echo.Context) error {
+func (r *router) ping(c echo.Context) error {
 	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
-	claims, err := common.ParseClaims(token)
+	claims, err := r.token.ParseClaims(token)
 	if err != nil {
 		return &common.ApiError{Code: http.StatusUnauthorized, Message: err.Error()}
 	}
 
-	if revoked, _ := common.IsTokenIdRevoked(c.Request().Context(), claims.ID); revoked {
+	if revoked, _ := r.token.IsTokenIdRevoked(c.Request().Context(), claims.ID); revoked {
 		return &common.ApiError{Code: http.StatusUnauthorized, Message: "token expired"}
 	}
 
@@ -309,24 +317,24 @@ func ping(c echo.Context) error {
 }
 
 // auth check the jwt token.
-func auth(c echo.Context) error {
+func (r *router) auth(c echo.Context) error {
 	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
 	if token == "" {
 		// browser websocket auth
 		token = c.Request().Header.Get("Sec-WebSocket-Protocol")
 	}
-	claims, err := common.ParseClaims(token)
+	claims, err := r.token.ParseClaims(token)
 	if err != nil {
-		return &common.ApiError{Code: http.StatusUnauthorized, Message: err.Error()}
+		return common.ApiError{Code: http.StatusUnauthorized, Message: err.Error()}
 	}
 
-	revoked, err := common.IsTokenIdRevoked(c.Request().Context(), claims.ID)
+	revoked, err := r.token.IsTokenIdRevoked(c.Request().Context(), claims.ID)
 	if err != nil {
 		c.Logger().Errorf("error while check token claim revoke: %s", err)
 		return common.NewApiError(http.StatusInternalServerError)
 	}
 	if revoked {
-		return &common.ApiError{Code: http.StatusUnauthorized, Message: "token expired"}
+		return common.ApiError{Code: http.StatusUnauthorized, Message: "token expired"}
 	}
 
 	c.Response().Header().Set("X-User-Id", claims.Issuer)

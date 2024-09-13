@@ -26,6 +26,13 @@ build
 
 .flattened-pom.xml
 
+# wire generated files
+**/wire_gen.go
+
+target/
+**/*.rs.bk
+Cargo.lock
+
 dist
 /data
 generated

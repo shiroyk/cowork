@@ -17,7 +17,7 @@ services:
         chmod 400 /data/replica.key
         chown 999:999 /data/replica.key
         cat << EOF > /usr/local/bin/mongo_init.sh
-        until mongosh --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' &>/dev/null; do sleep 1; done
+        until mongosh --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' &>/dev/null; do sleep 2; done
         sleep 5
         mongosh -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD --eval 'rs.initiate({"_id":"rs0","members":[{"_id":0,"host":"$$(hostname):27017"}]})'
         EOF
@@ -25,6 +25,19 @@ services:
         exec docker-entrypoint.sh mongod --bind_ip_all --replSet rs0 --keyFile /data/replica.key
     ports:
       - 27017:27017
+  mariadb-dev:
+    image: mariadb:10.11
+    container_name: mariadb-dev
+    restart: on-failure
+    environment:
+      MARIADB_USER: dev
+      MARIADB_PASSWORD: 123456
+      MARIADB_DATABASE: dev
+      MARIADB_ROOT_PASSWORD: dev123456
+    ports:
+      - 3306:3306
+    volumes:
+      - mariadb-volume:/var/lib/mysql
   redis-dev:
     image: redis:7.2.3-alpine
     container_name: redis-dev
@@ -40,7 +53,40 @@ services:
     ports:
       - "4222:4222"
       - "8222:8222"
-    command: "--http_port 8222"
-
+    command: "--js --http_port 8222"
+  gateway-dev:
+    image: nginx:latest
+    container_name: gateway-dev
+    restart: on-failure
+    network_mode: host
+    command:
+      - sh
+      - -c
+      - |
+        cat << EOF > /etc/nginx/conf.d/default.conf
+        server {
+          listen 8080;
+          server_name localhost;
+          location /user {
+            proxy_pass http://localhost:8081/api;
+          }
+          location /auth {
+            proxy_pass http://localhost:8082/api;
+          }
+          location /doc {
+            proxy_pass http://localhost:8083/api;
+          }
+          location /collab {
+            proxy_pass http://localhost:8084/api;
+        
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$$http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_read_timeout 86400;
+          }
+        }
+        EOF
+        nginx -g 'daemon off;'
 volumes:
   mongo-volume:
+  mariadb-volume:

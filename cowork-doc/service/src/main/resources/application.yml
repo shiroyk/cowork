@@ -1,5 +1,0 @@
-spring:
-  application:
-    name: doc
-  profiles:
-    active: dev

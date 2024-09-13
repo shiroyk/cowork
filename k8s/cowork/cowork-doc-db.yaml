@@ -13,6 +13,31 @@ data:
     pjMVBFMldGZkFCSG1vblhGOFhBPT0=
   PASSWORD: |
     ZG9jMTIzNDU2
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: db-doc-script
+  namespace: cowork
+data:
+  init.sh: |
+    until mongosh --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' &>/dev/null; do echo "waiting db"; sleep 5; done
+    if [[ "$(hostname)" =~ ^[a-z-]+0 ]]; then
+      mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --eval \
+      "rs.initiate({\"_id\":\"rs0\",\"members\":[{\"_id\":0,\"host\":\"$(hostname -f):27017\"}]})"
+    else
+      mongosh mongodb://$(hostname -f | sed -e 's/[0-9]\./0./'):27017 -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --eval \
+      "rs.add('$(hostname -f):27017')"
+    fi
+  start.sh: |
+    cp /tmp/key/replica.key /data/security/replica.key
+    chmod 400 /data/security/replica.key
+    chown 999:999 /data/security/replica.key
+    bash /tmp/script/init.sh &
+    docker-entrypoint.sh mongod --replSet rs0 --keyFile /data/security/replica.key
+
 ---
 
 apiVersion: v1
@@ -69,7 +94,7 @@ spec:
               memory: 256Mi
           env:
             - name: MONGO_INITDB_DATABASE
-              value: "doc"
+              value: "cowork_doc"
             - name: MONGO_INITDB_ROOT_USERNAME
               value: "doc"
             - name: MONGO_INITDB_ROOT_PASSWORD
@@ -91,7 +116,7 @@ spec:
           emptyDir: {}
         - name: db-script
           configMap:
-            name: db-script
+            name: db-doc-script
         - name: db-doc-secret
           secret:
             secretName: db-doc-secret

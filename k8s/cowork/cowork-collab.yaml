@@ -18,18 +18,16 @@ spec:
         app: collab
     spec:
       initContainers:
-        - name: wait-nats
+        - name: wait-for-services
           image: alpine:3.16
-          command: [ 'sh', '-c', 'until nc -vz nats-service 4222; do echo waiting for nats-service; sleep 2; done;' ]
-        - name: wait-redis
-          image: alpine:3.16
-          command: [ 'sh', '-c', 'until nc -vz redis-service 6379; do echo waiting for redis-service; sleep 2; done;' ]
-        - name: wait-doc
-          image: alpine:3.16
-          command: [ 'sh', '-c', 'until nc -vz doc-service 9090; do echo waiting for doc-service; sleep 2; done;' ]
-        - name: wait-user
-          image: alpine:3.16
-          command: [ 'sh', '-c', 'until nc -vz user-service 9090; do echo waiting for user-service; sleep 2; done;' ]
+          command:
+            - sh
+            - -c
+            - | 
+              until nc -vz nats-service 4222; do echo waiting for nats-service; sleep 2; done;
+              until nc -vz redis-service 6379; do echo waiting for redis-service; sleep 2; done;
+              until nc -vz doc-service 9090; do echo waiting for doc-service; sleep 2; done;
+              until nc -vz user-service 9090; do echo waiting for user-service; sleep 2; done;
       containers:
         - name: collab
           image: cowork-collab:latest
@@ -38,12 +36,13 @@ spec:
             - name: PROFILE
               value: "k8s"
           envFrom:
-            - configMapRef:
-                name: collab-config
             - secretRef:
                 name: redis-url
             - secretRef:
                 name: nats-url
+          volumeMounts:
+            - name: app-config
+              mountPath: /etc/app/
           ports:
             - containerPort: 8080
           resources:
@@ -56,7 +55,10 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             failureThreshold: 3
-
+      volumes:
+        - name: app-config
+          configMap:
+            name: collab-config
 ---
 
 apiVersion: v1

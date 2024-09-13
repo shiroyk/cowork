@@ -1,33 +1,40 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
-	common "github.com/shiroyk/cowork/common/src/main/golang"
-	docapi "github.com/shiroyk/cowork/doc/api/src/main/golang/doc/api"
+	common "github.com/shiroyk/cowork/common/golang"
+	"github.com/shiroyk/cowork/doc/api/golang/event"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-func init() {
-	router.GET("/api/:did", wsHandle)
+func (hub *Hub) router(eng *gin.Engine) {
+	eng.GET("/api/:did", hub.wsHandle)
+	eng.Any("/metrics", hub.metrics)
+}
+
+func (hub *Hub) metrics(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, map[string]any{"users": hub.size()})
 }
 
 // wsHandle websocket requests from the peer.
-func wsHandle(ctx *gin.Context) {
+func (hub *Hub) wsHandle(ctx *gin.Context) {
 	if !ctx.IsWebsocket() {
 		ctx.JSON(http.StatusBadRequest, common.NewErrorMessage(http.StatusText(http.StatusBadRequest)))
 		return
 	}
-	requestId := ctx.GetHeader("X-Request-ID")
-	uid := ctx.GetHeader("X-User-Id")
+	requestId := ctx.GetHeader(common.HeaderRequestID)
+	uid := ctx.Request.Header.Get(common.HeaderUserID)
+	protocol := ctx.Request.Header.Get("Sec-WebSocket-Protocol")
 
 	conn, _, _, err := (ws.HTTPUpgrader{
 		Header: map[string][]string{
-			"Sec-WebSocket-Protocol": {ctx.Request.Header.Get("Sec-WebSocket-Protocol")},
+			"Sec-WebSocket-Protocol": {protocol},
 		},
 	}).Upgrade(ctx.Request, ctx.Writer)
 	if err != nil {
@@ -47,10 +54,11 @@ func wsHandle(ctx *gin.Context) {
 			if err != nil {
 				break
 			}
-			var msg docapi.CollabMessage
+			var msg event.CollabMessage
 			if err = msgpack.Unmarshal(data, &msg); err != nil {
 				slog.Warn("failed marshal client message", slog.String("error", err.Error()),
-					slog.String("user_id", client.uid), slog.String("request_id", client.rid), wsKey)
+					slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)
+				_ = wsutil.WriteServerMessage(conn, ws.OpClose, []byte(fmt.Sprintf("invalid message: %s", err.Error())))
 				break
 			}
 

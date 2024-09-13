@@ -12,11 +12,10 @@ import (
 	"github.com/gobwas/ws/wsutil"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
-	common "github.com/shiroyk/cowork/common/src/main/golang"
-	docapi "github.com/shiroyk/cowork/doc/api/src/main/golang/doc/api"
-	doc "github.com/shiroyk/cowork/doc/api/src/main/golang/doc/client"
-	"github.com/shiroyk/cowork/user/api/src/generated/golang/user/api"
-	user "github.com/shiroyk/cowork/user/api/src/main/golang/user/client"
+	docclient "github.com/shiroyk/cowork/doc/api/golang/client"
+	"github.com/shiroyk/cowork/doc/api/golang/event"
+	userapi "github.com/shiroyk/cowork/user/api/generated/golang/api"
+	userclient "github.com/shiroyk/cowork/user/api/golang/client"
 	"github.com/vmihailenco/msgpack/v5"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -24,6 +23,10 @@ import (
 // Hub maintains the client connections
 type Hub struct {
 	sync.Mutex
+	redis redis.UniversalClient
+	nats  *nats.Conn
+	doc   *docclient.Client
+	user  *userclient.Client
 
 	// channels did => []*Client
 	channels map[string][]*Client
@@ -45,28 +48,46 @@ func (c *Client) Write(p []byte) {
 	err := wsutil.WriteServerBinary(c.conn, p)
 	if err != nil {
 		slog.Warn("failed write message", slog.String("error", err.Error()),
-			slog.String("user_id", c.uid), slog.String("request_id", c.rid), wsKey)
+			slog.String("user_id", c.uid), slog.String("request_id", c.rid), keyWS)
 		return
 	}
 }
 
-func newHub() *Hub {
-	return &Hub{
+func newHub(
+	doc *docclient.Client,
+	nats *nats.Conn,
+	user *userclient.Client,
+	redis redis.UniversalClient,
+) (*Hub, func()) {
+	h := &Hub{
+		doc:      doc,
+		nats:     nats,
+		user:     user,
+		redis:    redis,
 		channels: make(map[string][]*Client),
 		clients:  make(map[string]*Client),
+	}
+	subscribe := h.subscribe()
+	return h, func() {
+		subscribe.Unsubscribe()
+		h.Lock()
+		defer h.Unlock()
+		for _, client := range h.clients {
+			client.conn.Close()
+		}
 	}
 }
 
 // broadcast the channels, if uid not empty, skip the user client
-func (h *Hub) broadcast(event docapi.Event, uid, did string, data []byte) {
-	h.Lock()
-	defer h.Unlock()
+func (hub *Hub) broadcast(event event.Event, uid string, did string, data []byte) {
+	hub.Lock()
+	defer hub.Unlock()
 	// publish to stream
-	if err := nc().PublishMsg(&nats.Msg{Subject: event.Subject(), Data: data, Header: msgHeader}); err != nil {
+	if err := hub.nats.PublishMsg(&nats.Msg{Subject: event.Subject(), Data: data, Header: msgHeader}); err != nil {
 		slog.Warn("failed publish message", slog.String("error", err.Error()),
-			slog.String("user_id", uid), streamKey)
+			slog.String("user_id", uid), keyStream)
 	}
-	clients, ok := h.channels[did]
+	clients, ok := hub.channels[did]
 	if !ok {
 		return
 	}
@@ -79,51 +100,51 @@ func (h *Hub) broadcast(event docapi.Event, uid, did string, data []byte) {
 }
 
 // size total user size
-func (h *Hub) size() int { return len(h.clients) }
+func (hub *Hub) size() int { return len(hub.clients) }
 
 // login register the client
-func (h *Hub) login(client *Client) {
-	h.Lock()
-	docs := h.channels[client.did]
-	h.channels[client.did] = append(docs, client)
-	h.clients[client.uid] = client
-	h.Unlock()
+func (hub *Hub) login(client *Client) {
+	hub.Lock()
+	docs := hub.channels[client.did]
+	hub.channels[client.did] = append(docs, client)
+	hub.clients[client.uid] = client
+	hub.Unlock()
 
 	{ // online users
-		msg := docapi.CollabMessage{Event: docapi.EventLogin, Uid: client.uid, Did: client.did, Data: redisDocUsers(client, actLogin)}
+		msg := event.CollabMessage{Event: event.Login, Uid: client.uid, Did: client.did, Data: hub.redisDocUsers(client, actLogin)}
 		data, _ := msgpack.Marshal(msg)
-		h.broadcast(docapi.EventLogin, "", msg.Did, data)
+		hub.broadcast(event.Login, "", msg.Did, data)
 	}
 
 	{ // sync doc nodes
-		msg := docapi.CollabMessage{Event: docapi.EventSync, Uid: client.uid, Did: client.did, Data: docNodes(client)}
+		msg := event.CollabMessage{Event: event.Sync, Uid: client.uid, Did: client.did, Data: hub.docNodes(client)}
 		data, _ := msgpack.Marshal(msg)
 		client.Write(data)
 	}
 }
 
 // logout unregister the client
-func (h *Hub) logout(client *Client) {
-	h.Lock()
-	channel, ok := h.channels[client.did]
+func (hub *Hub) logout(client *Client) {
+	hub.Lock()
+	channel, ok := hub.channels[client.did]
 	if ok {
-		h.channels[client.did] = slices.DeleteFunc(channel, func(c *Client) bool { return c == client })
+		hub.channels[client.did] = slices.DeleteFunc(channel, func(c *Client) bool { return c == client })
 	}
-	delete(h.clients, client.uid)
+	delete(hub.clients, client.uid)
 	if err := client.conn.Close(); err != nil {
 		slog.Warn("error while close connect", slog.String("error", err.Error()),
-			slog.String("user_id", client.uid), slog.String("request_id", client.rid), wsKey)
+			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)
 	}
-	h.Unlock()
+	hub.Unlock()
 
 	// online users
-	users := redisDocUsers(client, actLogout)
+	users := hub.redisDocUsers(client, actLogout)
 	if users == nil {
 		return
 	}
-	msg := docapi.CollabMessage{Event: docapi.EventLogout, Uid: client.uid, Did: client.did, Data: users}
+	msg := event.CollabMessage{Event: event.Logout, Uid: client.uid, Did: client.did, Data: users}
 	data, _ := msgpack.Marshal(msg)
-	h.broadcast(docapi.EventLogout, "", msg.Did, data)
+	hub.broadcast(event.Logout, "", msg.Did, data)
 }
 
 type action int
@@ -147,22 +168,22 @@ return redis.call("SMEMBERS", key)
 `)
 
 // redisDocUsers add/remove doc online users from the Redis uid list and return the serialized bytes of users dto.
-func redisDocUsers(client *Client, act action) []byte {
+func (hub *Hub) redisDocUsers(client *Client, act action) []byte {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	all, err := actionScript.Run(ctx, common.RedisClient(), []string{client.did}, client.uid, int(act)).StringSlice()
+	all, err := actionScript.Run(ctx, hub.redis, []string{client.did}, client.uid, int(act)).StringSlice()
 	if err != nil {
 		slog.Warn("failed execute online action", slog.String("error", err.Error()),
-			slog.String("user_id", client.uid), slog.String("request_id", client.rid), wsKey)
+			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)
 		return nil
 	}
 	if len(all) == 0 {
 		return nil
 	}
-	users, err := user.UserServiceClient().FindByIds(ctx, &api.Ids{Id: all})
+	users, err := hub.user.FindByIds(ctx, &userapi.Ids{Id: all})
 	if err != nil {
 		slog.Warn("failed get users", slog.String("error", err.Error()),
-			slog.String("user_id", client.uid), slog.String("request_id", client.rid), grpcKey)
+			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyGRPC)
 		return nil
 	}
 
@@ -174,7 +195,7 @@ func redisDocUsers(client *Client, act action) []byte {
 	enc.SetCustomStructTag("json") // use the json tag
 	if err = enc.Encode(users.Item); err != nil {
 		slog.Warn("failed marshal users message", slog.String("error", err.Error()),
-			slog.String("user_id", client.uid), slog.String("request_id", client.rid), wsKey)
+			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)
 		return nil
 	}
 
@@ -182,19 +203,19 @@ func redisDocUsers(client *Client, act action) []byte {
 }
 
 // docNodes get all doc nodes
-func docNodes(client *Client) []byte {
+func (hub *Hub) docNodes(client *Client) []byte {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	nodes, err := doc.DocServiceClient().FindNodesByDid(ctx, wrapperspb.String(client.did))
+	nodes, err := hub.doc.FindNodesByDid(ctx, wrapperspb.String(client.did))
 	if err != nil {
 		slog.Warn("failed get doc nodes", slog.String("error", err.Error()),
-			slog.String("user_id", client.uid), slog.String("request_id", client.rid), grpcKey)
+			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyGRPC)
 		return nil
 	}
 	data, err := msgpack.Marshal(nodes.Nodes)
 	if err != nil {
 		slog.Warn("failed marshal doc nodes", slog.String("error", err.Error()),
-			slog.String("user_id", client.uid), slog.String("request_id", client.rid), wsKey)
+			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)
 		return nil
 	}
 	return data

@@ -20,10 +20,12 @@ spec:
       initContainers:
         - name: wait-redis
           image: alpine:3.16
-          command: [ 'sh', '-c', 'until nc -vz redis-service 6379; do echo waiting for redis-service; sleep 2; done;' ]
-        - name: wait-user
-          image: alpine:3.16
-          command: [ 'sh', '-c', 'until nc -vz user-service 9090; do echo waiting for user-service; sleep 2; done;' ]
+          command:
+            - sh
+            - -c
+            - |
+              until nc -vz redis-service 6379; do echo waiting for redis-service; sleep 2; done;
+              until nc -vz user-service 9090; do echo waiting for user-service; sleep 2; done;
       containers:
         - name: auth
           image: cowork-auth:latest
@@ -38,6 +40,9 @@ spec:
                 name: jwt-secret
             - secretRef:
                 name: redis-url
+          volumeMounts:
+            - name: app-config
+              mountPath: /etc/app/
           ports:
             - containerPort: 8080
           resources:
@@ -50,7 +55,10 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             failureThreshold: 3
-
+      volumes:
+        - name: app-config
+          configMap:
+            name: auth-config
 ---
 
 apiVersion: v1

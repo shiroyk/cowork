@@ -1,1 +1,7 @@
 .protobuf
+target
+node_modules
+dist
+cowork-common/target
+cowork-doc/target
+cowork-doc/api/target

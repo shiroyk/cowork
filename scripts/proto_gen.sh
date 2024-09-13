@@ -108,7 +108,7 @@ for arg in "${@:2}"; do
       GEN_JAVA=true
       ;;
     --out=*)
-      OUT_PATH="${arg#*=}/generated"
+      OUT_PATH="${arg#*=}generated"
       ;;
     --protobuf=*)
       PROTOBUF_PATH="${arg#*=}"

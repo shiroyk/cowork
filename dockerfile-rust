@@ -1,0 +1,41 @@
+ARG APP
+ARG TZ=Asia/Shanghai
+
+FROM rust:1.81.0-alpine AS builder
+ARG APP
+ARG TZ
+
+RUN apk add --no-cache make tzdata musl-dev protoc protobuf-dev
+
+RUN cp /usr/share/zoneinfo/$TZ /etc/localtime &&  \
+    adduser  \
+        --disabled-password  \
+        --gecos "" \
+        --home "/nonexistent"  \
+        --shell "/sbin/nologin"  \
+        --no-create-home  \
+        --uid "100001"  \
+        "appuser"
+
+COPY . /workspace/
+WORKDIR /workspace
+WORKDIR /workspace/$APP
+
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo build --release
+
+FROM alpine:latest
+ARG APP
+
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+COPY --from=builder /etc/localtime /etc/localtime
+
+COPY --from=builder /workspace/$APP/target/release/app /usr/local/bin/app
+
+RUN mkdir -p /var/log/app && chown appuser /var/log/app
+USER appuser
+VOLUME /var/log/app
+EXPOSE 8080
+
+ENTRYPOINT ["app"]

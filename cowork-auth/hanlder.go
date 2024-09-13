@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	common "github.com/shiroyk/cowork/common/src/main/golang"
+	common "github.com/shiroyk/cowork/common/golang"
 	"google.golang.org/grpc/status"
 )
 
@@ -32,7 +32,7 @@ func errorHandler(err error, c echo.Context) {
 	}
 	{
 		c.Logger().Errorf("request_id %s URI %s method %s %s",
-			c.Request().Header.Get("X-Request-ID"), c.Request().Method, c.Request().RequestURI, err)
+			c.Request().Header.Get(common.HeaderRequestID), c.Request().Method, c.Request().RequestURI, err)
 	}
 
 ret:

@@ -1,11 +1,11 @@
-GO_PROJECT = cowork-auth cowork-collab
-SPRING_PROJECT = cowork-user cowork-doc
+GO_PROJECT = cowork-auth cowork-collab cowork-user
+RUST_PROJECT = cowork-doc
 PROTO_PROJECT = cowork-doc/api cowork-user/api
 .SILENT: proto
 
 default: all
 
-all: proto test build-spring-native build-go build-frontend
+all: gen-wire gen-proto build-go build-rust build-frontend
 
 test-go:
 	for p in $(or $(project),$(GO_PROJECT)); do \
@@ -23,24 +23,25 @@ build-go:
 		docker buildx build -f dockerfile-go --build-arg APP=$$p -t $$p:latest . ; \
 	done
 
-build-spring:
-	for p in $(or $(project),$(SPRING_PROJECT)); do \
-		echo build spring project $$p; \
-		docker buildx build -f dockerfile-spring --build-arg APP=$$p -t $$p:latest . ; \
+build-rust:
+	for p in $(or $(project),$(RUST_PROJECT)); do \
+		echo build rust project $$p ; \
+		docker buildx build -f dockerfile-rust --build-arg APP=$$p -t $$p:latest . ; \
 	done
 
-build-spring-native:
-	for p in $(or $(project),$(SPRING_PROJECT)); do \
-		echo build spring native project $$p; \
-		docker buildx build -f dockerfile-spring-native --build-arg APP=$$p -t $$p:latest . ; \
-	done
+gen-wire:
+	if ! command -v wire > /dev/null; then \
+		echo "wire command is not available, please install wire see https://github.com/google/wire"; \
+		exit 1; \
+	fi \
+	cd cowork-user && wire
 
-proto:
+gen-proto:
 	for p in $(or $(project),$(PROTO_PROJECT)); do \
-		echo generate proto $(or $(gen),all) $$p ; \
-		find $$p/src -name '*.proto' -exec ./scripts/proto_gen.sh {} --$(or $(gen),all) --out=$$p/src ';' ; \
+		echo generate proto go $$p ; \
+		find $$p/proto -name '*.proto' -exec ./scripts/proto_gen.sh {} --go --out=$$p/ ';' ; \
 	done
 
 test:
 
-.PHONY: default build proto test
+.PHONY: default build gen-proto test

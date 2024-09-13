@@ -19,7 +19,7 @@ data:
     http: 8222
     
     authorization {
-      token: $TOKEN
+      password: $TOKEN
     }
     
     jetstream {

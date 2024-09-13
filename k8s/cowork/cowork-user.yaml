@@ -20,35 +20,36 @@ spec:
       initContainers:
         - name: wait-db-user
           image: alpine:3.16
-          command: [ 'sh', '-c', 'until nc -vz db-user-service 27017; do echo waiting for db-user-service; sleep 2; done;' ]
+          command: [ 'sh', '-c', 'until nc -vz db-user-service 3306; do echo waiting for db-user-service; sleep 2; done;' ]
       containers:
         - name: user
           image: cowork-user:latest
           imagePullPolicy: Never
           env:
-            - name: SPRING_PROFILES_ACTIVE
+            - name: PROFILE
               value: "k8s"
           envFrom:
             - secretRef:
                 name: user-db-url
           volumeMounts:
-            - name: spring-config
-              mountPath: /etc/spring-config/
+            - name: app-config
+              mountPath: /etc/app/
           ports:
             - containerPort: 8080
             - containerPort: 9090
+              name: grpc
           resources:
             limits:
               memory: 512Mi
           readinessProbe:
             httpGet:
-              path: /actuator/health
+              path: /ping
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 3
       volumes:
-        - name: spring-config
+        - name: app-config
           configMap:
             name: user-config
 

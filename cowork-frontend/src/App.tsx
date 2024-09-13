@@ -5,10 +5,10 @@ import { MonacoBinding } from "y-monaco";
 import MonacoEditor, { EditorDidMount, monaco } from "react-monaco-editor";
 import { decode, decodeAsync, encode } from "@msgpack/msgpack";
 
-let baseURL = `${location.host}/api`;
+let baseURL = `http://${location.host}/api`;
 
 if (import.meta.env.PROD) {
-  baseURL = "http://api.cowork.local";
+  baseURL = `${location.protocol}//api.cowork.local`;
 }
 
 enum Event {
@@ -97,15 +97,32 @@ const useUser = () => {
   return { token, getUserId, signUp, signIn, checkToken };
 };
 
-const addDoc = async (token: string, uid: string) => {
-  const res = await fetch(`${baseURL}/doc/1`, {
+interface DocInfo {
+  title: string;
+  uid: string;
+  did: string;
+}
+
+const searchDoc = async (token: string): Promise<DocInfo[] | null> => {
+  const res = await fetch(`${baseURL}/doc?title=test`, {
     headers: {
       Accept: "application/json",
       Authorization: "Bearer " + token,
     },
   });
-  if (res.ok) return;
-  await fetch(`${baseURL}/doc`, {
+  if (!res.ok) {
+    alert(await res.text());
+    return null;
+  }
+  return await res.json();
+}
+
+const getDocId = async (token: string, uid: string): Promise<string> => {
+  const docs = await searchDoc(token);
+  if (docs?.length) {
+    return docs[0].did;
+  }
+  let newDoc = await fetch(`${baseURL}/doc`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -113,13 +130,21 @@ const addDoc = async (token: string, uid: string) => {
       Authorization: "Bearer " + token,
     },
     body: JSON.stringify({
-      id: "1",
       title: "test1",
-      owner: 0,
-      ownerId: uid,
+      uid: uid
     }),
   });
+  if (!newDoc.ok) {
+    alert(await newDoc.text());
+  }
+  return ((await newDoc.json()) as { id: string }).id;
 };
+
+enum ConnectStatus {
+  Disconnected = 1,
+  Connecting = 2,
+  Connected = 3,
+}
 
 function App() {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
@@ -127,8 +152,8 @@ function App() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [content, setContent] = useState("");
-  const [connect, setConnect] = useState(false);
-  const [onlineUser, setOnlineUser] = useState("");
+  const [connect, setConnect] = useState<ConnectStatus | null>(null);
+  const [connectMsg, setConnectMsg] = useState("");
   const [lastSave, setLastSave] = useState<string | null>(null);
   const { token, getUserId, signUp, signIn, checkToken } = useUser();
 
@@ -155,12 +180,12 @@ function App() {
 
   const onLogin: MessageHandler = (msg) => {
     const list = msg.data ? (decode(msg.data) as Users) : null;
-    setOnlineUser(list ? list.map((u) => u.username).join(" | ") : "");
+    setConnectMsg(list ? list.map((u) => u.username).join(" | ") : "");
   };
 
   const onLogout: MessageHandler = (msg) => {
     const list = msg.data ? (decode(msg.data) as Users) : null;
-    setOnlineUser(list ? list.map((u) => u.username).join(" | ") : "");
+    setConnectMsg(list ? list.map((u) => u.username).join(" | ") : "");
   };
 
   const onSync: MessageHandler = (msg) => {
@@ -176,7 +201,7 @@ function App() {
   const onSave: MessageHandler = (msg) => {
     const date = new Date((decode(msg.data) as number) * 1000);
     setLastSave(
-      "✔️ " +
+      "Saved at ✔️ " +
         date.toLocaleString("en-US", {
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         })
@@ -195,36 +220,50 @@ function App() {
     checkToken();
     if (token == "") return;
     const uid = getUserId();
-    addDoc(token, uid);
-    const ws = new WebSocket(
-      `${baseURL}/collab/1`,
-      token
-    );
-    ws.onopen = () => {
-      setConnect(true);
-      ydoc.on("updateV2", (update, or) => {
-        if (!or || ws.readyState != ws.OPEN) return;
-        ws.send(
-          encode({ did: "1", uid: uid, data: update, event: Event.UpdateEvent })
-        );
-      });
-    };
-    ws.onmessage = (e: MessageEvent<Blob>) => {
-      (async () => {
-        const msg = (await decodeAsync(await e.data.stream())) as Message;
-        console.log(msg);
-        handlers[msg.event]?.(msg);
-      })();
-    };
-    ws.onclose = () => setConnect(false);
-    return () => ws.close();
+    let ws: WebSocket | null = null;
+    (async () => {
+      const did = await getDocId(token, uid);
+      setConnect(ConnectStatus.Connecting);
+      try {
+        ws = new WebSocket(`${baseURL}/collab/${did}`, token);
+      } catch (e) {
+        console.log(e);
+        alert(e);
+        return;
+      }
+      ws.onopen = () => {
+        setConnect(ConnectStatus.Connected);
+        ydoc.on("updateV2", (update, or) => {
+          if (!or || ws!.readyState != ws!.OPEN) return;
+          ws!.send(
+              encode({ did: did, uid: `${uid}`, data: update, event: Event.UpdateEvent })
+          );
+        });
+      };
+      ws.onmessage = (e: MessageEvent<Blob>) => {
+        (async () => {
+          const msg = (await decodeAsync(e.data.stream())) as Message;
+          console.log(msg);
+          handlers[msg.event]?.(msg);
+        })();
+      };
+      ws.onclose = (e: CloseEvent) => {
+        setConnect(ConnectStatus.Disconnected);
+        setConnectMsg(`Connection closed with ${e.reason || e.code}`);
+      };
+    })();
+    return () => ws?.close();
   }, []);
 
   return (
     <>
       <div className="btn">
         {connect ? (
-          <div className="online-user">Online: {onlineUser}</div>
+          <div style={{
+            color: connect === ConnectStatus.Disconnected ? "red" : "green",
+          }}>
+            {connectMsg}
+          </div>
         ) : (
           <button type="button" onClick={handleOpenLogin}>
             Login
@@ -232,7 +271,7 @@ function App() {
         )}
 
         <div style={{ flex: 1 }}></div>
-        <div style={{ marginRight: 10 }}>{lastSave}</div>
+        <div style={{ marginRight: 10, color: "green" }}>{lastSave}</div>
       </div>
       <div className="editor-box">
         <MonacoEditor
