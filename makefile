@@ -1,5 +1,6 @@
 GO_PROJECT = cowork-auth cowork-collab cowork-user
 RUST_PROJECT = cowork-doc
+WIRE_PROJECT = cowork-user cowork-collab cowork-auth
 PROTO_PROJECT = cowork-doc/api cowork-user/api
 .SILENT: proto
 
@@ -33,8 +34,11 @@ gen-wire:
 	if ! command -v wire > /dev/null; then \
 		echo "wire command is not available, please install wire see https://github.com/google/wire"; \
 		exit 1; \
-	fi \
-	cd cowork-user && wire
+	fi; \
+	for p in $(or $(project),$(WIRE_PROJECT)); do \
+		echo wire generate project $$p ; \
+		cd cowork-user && wire && cd ..; \
+	done
 
 gen-proto:
 	for p in $(or $(project),$(PROTO_PROJECT)); do \
