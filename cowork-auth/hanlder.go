@@ -15,7 +15,7 @@ func errorHandler(err error, c echo.Context) {
 	var message = err.Error()
 
 	{
-		var apiErr *common.ApiError
+		var apiErr common.ApiError
 		ok := errors.As(err, &apiErr)
 		if ok {
 			code = apiErr.Code
