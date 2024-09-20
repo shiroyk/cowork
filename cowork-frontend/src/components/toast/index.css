@@ -1,0 +1,70 @@
+#toast {
+    top: 30px;
+    left: 50%;
+    z-index: 1;
+    position: fixed;
+    display: none;
+    min-width: 250px;
+    background-color: #2c2c2c;
+    color: #ffffff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 16px;
+}
+
+#toast.show {
+    display: flex;
+    animation: fade-in 0.5s, fade-out 0.5s 2.5s;
+}
+
+#toast.error {
+    color: #ff7474;
+}
+
+#toast.success {
+    color: #74ffb0;
+}
+
+@-webkit-keyframes fade-in {
+    from {
+        top: 0;
+        opacity: 0;
+    }
+    to {
+        top: 30px;
+        opacity: 1;
+    }
+}
+
+@keyframes fade-in {
+    from {
+        top: 0;
+        opacity: 0;
+    }
+    to {
+        top: 30px;
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes fade-out {
+    from {
+        top: 30px;
+        opacity: 1;
+    }
+    to {
+        top: 0;
+        opacity: 0;
+    }
+}
+
+@keyframes fade-out {
+    from {
+        top: 30px;
+        opacity: 1;
+    }
+    to {
+        top: 0;
+        opacity: 0;
+    }
+}
