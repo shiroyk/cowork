@@ -83,7 +83,7 @@ export default function Editor() {
       connect(did);
       ydoc.on("updateV2", (update, or) => {
         if (!or) return;
-        send({ did: did, uid: `${uid}`, data: update, event: DocEvent.UpdateEvent });
+        send({ data: update, event: DocEvent.UpdateEvent });
       });
     })();
     return () => close();

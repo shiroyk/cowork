@@ -18,8 +18,8 @@ export enum DocEvent {
 
 export interface Message {
   event: DocEvent;
-  uid: string;
-  did: string;
+  uid?: string;
+  did?: string;
   data: Uint8Array;
 }
 

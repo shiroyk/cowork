@@ -62,7 +62,7 @@ func (hub *Hub) wsHandle(ctx *gin.Context) {
 				break
 			}
 
-			hub.broadcast(msg.Event, msg.Uid, msg.Did, data)
+			hub.broadcast(msg.Event, client.uid, client.did, data)
 		}
 	}()
 }
