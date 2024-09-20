@@ -12,7 +12,7 @@ end
 subgraph cowork
     subgraph Deployment
         subgraph auth-service
-            auth-pod(user-pod):::pod
+            auth-pod(auth-pod):::pod
         end
         subgraph user-service
             user-pod(user-pod):::pod
