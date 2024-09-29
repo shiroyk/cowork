@@ -17,6 +17,7 @@ export default function Editor() {
   const [content, setContent] = useState("");
   const [lastSave, setLastSave] = useState<string | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<Users | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const { getUserId, signUp, signIn, validToken } = useUser();
   const { getOrAddDoc } = useDoc();
@@ -47,18 +48,11 @@ export default function Editor() {
 
   const onLoginOut: MessageHandler = (msg) => setOnlineUsers(msg.data ? (decode(msg.data) as Users) : null)
 
-  const onSync: MessageHandler = (msg) => {
-    ((decode(msg.data) as Uint8Array[]) || null)?.forEach((u) =>
-      applyUpdateV2(ydoc, u)
-    );
-  };
-
-  const onUpdate: MessageHandler = (msg) => {
-    applyUpdateV2(ydoc, msg.data);
-  };
+  const onUpdate: MessageHandler = (msg) => applyUpdateV2(ydoc, msg.data);
 
   const onSave: MessageHandler = (msg) => {
     const date = new Date((decode(msg.data) as number) * 1000);
+    setSaving(false);
     setLastSave(
       "Saved at ✔️ " +
       date.toLocaleString("en-US", {
@@ -70,7 +64,7 @@ export default function Editor() {
   const handlers: Record<DocEvent, MessageHandler> = {
     [DocEvent.LoginEvent]: onLoginOut,
     [DocEvent.LogoutEvent]: onLoginOut,
-    [DocEvent.SyncEvent]: onSync,
+    [DocEvent.SyncEvent]: onUpdate,
     [DocEvent.UpdateEvent]: onUpdate,
     [DocEvent.SaveEvent]: onSave,
   };
@@ -83,6 +77,7 @@ export default function Editor() {
       connect(did);
       ydoc.on("updateV2", (update, or) => {
         if (!or) return;
+        setSaving(true);
         send({ data: update, event: DocEvent.UpdateEvent });
       });
     })();
@@ -106,7 +101,7 @@ export default function Editor() {
           </button>
         )}
         <div style={{ flex: 1 }}></div>
-        <div style={{ marginRight: 10, color: "green" }}>{lastSave}</div>
+        <div style={{ marginRight: 10, color: "green" }}>{saving ? "Saving..." : lastSave}</div>
       </div>
       <div className="editor-box">
         <MonacoEditor

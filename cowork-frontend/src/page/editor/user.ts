@@ -28,6 +28,7 @@ const useUser = () => {
 
   const signUp = async (username: string, password: string) => {
     await api.post(`/auth/sign_up`, { username, password });
+    showToast("sign up success", { type: "info" });
   };
 
   const validToken = () => {

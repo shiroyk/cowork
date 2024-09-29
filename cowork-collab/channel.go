@@ -78,21 +78,23 @@ func newHub(
 	}
 }
 
-// broadcast the channels, if uid not empty, skip the user client
-func (hub *Hub) broadcast(event event.Event, uid string, did string, data []byte) {
+// broadcast the channels, skip the user client if skip not empty
+func (hub *Hub) broadcast(skip string, msg event.CollabMessage) {
 	hub.Lock()
 	defer hub.Unlock()
+	slog.Debug("broadcast", slog.String("event", msg.Event.String()), slog.String("did", msg.Did), slog.String("uid", msg.Uid), keyStream)
 	// publish to stream
-	if err := hub.nats.PublishMsg(&nats.Msg{Subject: event.Subject(), Data: data, Header: msgHeader}); err != nil {
+	data, _ := msgpack.Marshal(msg)
+	if err := hub.nats.PublishMsg(&nats.Msg{Subject: msg.Event.Subject(), Data: data, Header: msgHeader}); err != nil {
 		slog.Warn("failed publish message", slog.String("error", err.Error()),
-			slog.String("user_id", uid), keyStream)
+			slog.String("user_id", msg.Uid), keyStream)
 	}
-	clients, ok := hub.channels[did]
+	clients, ok := hub.channels[msg.Did]
 	if !ok {
 		return
 	}
 	for _, client := range clients {
-		if len(uid) > 0 && client.uid == uid {
+		if len(skip) > 0 && client.uid == skip {
 			continue
 		}
 		client.Write(data)
@@ -109,15 +111,16 @@ func (hub *Hub) login(client *Client) {
 	hub.channels[client.did] = append(docs, client)
 	hub.clients[client.uid] = client
 	hub.Unlock()
+	slog.Debug("user login", slog.String("user_id", client.uid),
+		slog.String("did", client.did), slog.String("request_id", client.rid), keyWS)
 
 	{ // online users
 		msg := event.CollabMessage{Event: event.Login, Uid: client.uid, Did: client.did, Data: hub.redisDocUsers(client, actLogin)}
-		data, _ := msgpack.Marshal(msg)
-		hub.broadcast(event.Login, "", msg.Did, data)
+		hub.broadcast("", msg)
 	}
 
 	{ // sync doc nodes
-		msg := event.CollabMessage{Event: event.Sync, Uid: client.uid, Did: client.did, Data: hub.docNodes(client)}
+		msg := event.CollabMessage{Event: event.Sync, Uid: client.uid, Did: client.did, Data: hub.docContent(client)}
 		data, _ := msgpack.Marshal(msg)
 		client.Write(data)
 	}
@@ -130,6 +133,8 @@ func (hub *Hub) logout(client *Client) {
 	if ok {
 		hub.channels[client.did] = slices.DeleteFunc(channel, func(c *Client) bool { return c == client })
 	}
+	slog.Debug("user logout", slog.String("user_id", client.uid),
+		slog.String("did", client.did), slog.String("request_id", client.rid), keyWS)
 	delete(hub.clients, client.uid)
 	if err := client.conn.Close(); err != nil {
 		slog.Warn("error while close connect", slog.String("error", err.Error()),
@@ -143,8 +148,7 @@ func (hub *Hub) logout(client *Client) {
 		return
 	}
 	msg := event.CollabMessage{Event: event.Logout, Uid: client.uid, Did: client.did, Data: users}
-	data, _ := msgpack.Marshal(msg)
-	hub.broadcast(event.Logout, "", msg.Did, data)
+	hub.broadcast("", msg)
 }
 
 type action int
@@ -202,21 +206,15 @@ func (hub *Hub) redisDocUsers(client *Client, act action) []byte {
 	return buf.Bytes()
 }
 
-// docNodes get all doc nodes
-func (hub *Hub) docNodes(client *Client) []byte {
+// docContent get all doc content
+func (hub *Hub) docContent(client *Client) []byte {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	nodes, err := hub.doc.FindNodesByDid(ctx, wrapperspb.String(client.did))
+	content, err := hub.doc.FindContentByDid(ctx, wrapperspb.String(client.did))
 	if err != nil {
-		slog.Warn("failed get doc nodes", slog.String("error", err.Error()),
+		slog.Warn("failed get doc content", slog.String("error", err.Error()),
 			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyGRPC)
 		return nil
 	}
-	data, err := msgpack.Marshal(nodes.Nodes)
-	if err != nil {
-		slog.Warn("failed marshal doc nodes", slog.String("error", err.Error()),
-			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)
-		return nil
-	}
-	return data
+	return content.Data
 }

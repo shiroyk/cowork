@@ -84,7 +84,7 @@ func (g *GrpcService) FindByName(ctx context.Context, value *wrapperspb.StringVa
 
 func (g *GrpcService) sessions(ctx context.Context, user *api.User) {
 	var sessions []*api.Session
-	g.db.Table(TableSession).WithContext(ctx).Find(&sessions, "uid = ?", user.Id)
+	g.db.Table(TableSession).WithContext(ctx).Find(&sessions, "userId = ?", user.Id)
 	user.Sessions = sessions
 }
 

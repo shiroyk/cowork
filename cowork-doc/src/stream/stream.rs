@@ -1,6 +1,5 @@
 use crate::config::{Config, StreamConfig};
-use crate::model::{CollabMessage, Doc, DocVector, Event, COLL_DOC_NAME, COLL_VECTOR_NAME};
-use crate::service::load_doc;
+use crate::model::{CollabMessage, Doc, DocVector, Event, COLL_CONTENT_NAME, COLL_DOC_NAME, COLL_VECTOR_NAME};
 use async_nats::jetstream::consumer::pull::BatchError;
 use async_nats::jetstream::consumer::{AckPolicy, Consumer};
 use async_nats::jetstream::stream::Config as JetStreamConfig;
@@ -8,7 +7,7 @@ use async_nats::jetstream::stream::RetentionPolicy::Interest;
 use async_nats::{jetstream, Client};
 use bytes::Bytes;
 use jetstream::consumer::pull::Config as ConsumerConfig;
-use mongodb::bson::doc;
+use mongodb::bson::{doc, Document};
 use mongodb::Database;
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -16,9 +15,8 @@ use std::time::SystemTime;
 use tokio::spawn;
 use tokio::time::sleep;
 use tonic::codegen::tokio_stream::StreamExt;
-use yrs::{Doc as YDoc, Transact, Update};
-use yrs::updates::decoder::Decode;
-use log::debug;
+use log::{debug, error};
+use crate::service::flush_content;
 
 #[derive(Debug, Clone)]
 pub struct EventStream {
@@ -75,21 +73,26 @@ impl EventStream {
             let mut buffer = Vec::<DocVector>::with_capacity(self.cfg.batch);
             loop {
                 // fetch messages
-                if let Err(_) = self.fetch(&mut buffer).await {
+                if let Err(err) = self.fetch(&mut buffer).await {
+                    error!("failed to fetch messages: {}", err);
                     continue;
                 }
 
                 // wait more messages
-                if buffer.len() < buffer.capacity()  {
+                if buffer.len() < buffer.capacity() {
                     sleep(self.cfg.wait).await;
-                    if buffer.len() == 0 { continue }
+                    if buffer.len() == 0 { continue; }
                 }
 
                 // persist messages
                 let self_clone = self.clone();
                 let batch = buffer.clone();
                 buffer.clear();
-                spawn(async move { self_clone.persist(batch).await });
+                spawn(async move {
+                    if let Err(e) = self_clone.persist(batch).await {
+                        error!("failed to persist messages: {}", e);
+                    }
+                });
             }
         });
     }
@@ -127,12 +130,13 @@ impl EventStream {
 
     async fn persist(&self, vectors: Vec<DocVector>) -> Result<(), mongodb::error::Error> {
         debug!("{}: => doc persistence start {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs(), vectors.len());
-        let mut saved = HashMap::<String, HashSet<String>>::new();
+        let mut saved = HashMap::<String, (HashSet<String>, u16)>::new();
         for x in &vectors {
             if let Some(set) = saved.get_mut(&x.did) {
-                set.insert(x.uid.clone());
+                set.0.insert(x.uid.clone());
+                set.1 += 1;
             } else {
-                saved.insert(x.did.clone(), HashSet::from([x.uid.clone()]));
+                saved.insert(x.did.clone(), (HashSet::from([x.uid.clone()]), 1));
             }
         }
 
@@ -152,7 +156,7 @@ impl EventStream {
         };
 
         // update last_updated and publish save events
-        for (did, uids) in saved {
+        for (did, p) in saved {
             let result = match coll_doc.update_one(
                 doc! { "did": did.clone() },
                 doc! { "$set": { "lastUpdated": now } })
@@ -164,7 +168,25 @@ impl EventStream {
                 continue;
             }
 
-            for uid in uids {
+            // flush content
+            let content = self.db.collection::<Document>(COLL_CONTENT_NAME)
+                .find_one_and_update(
+                    doc! { "did": did.clone() },
+                    doc! { "$inc": { "waitFlush": p.1 as i32 } },
+                ).projection(doc! { "waitFlush": 1 }).await?;
+            if let Some(v) = content {
+                if v.get_i32("waitFlush").unwrap_or(0) >= self.cfg.flush_size as i32 {
+                    let db = self.db.clone();
+                    let did = did.clone();
+                    spawn(async move {
+                        if let Err(err) = flush_content(&db, did).await {
+                            error!("failed to flush content: {}", err);
+                        }
+                    });
+                }
+            }
+
+            for uid in p.0 {
                 let mut msg = save_message.clone();
                 msg.uid = uid;
                 msg.did = did.clone();
@@ -177,26 +199,5 @@ impl EventStream {
         }
         let _ = self.client.flush().await;
         Ok(())
-    }
-
-    // todo: remote doc
-    #[allow(dead_code)]
-    async fn load_remote_doc(&self, did: String) {
-        let content = match load_doc(&self.db, did).await {
-            Ok(x) => x,
-            Err(_) => return
-        };
-        if let None = content { return }
-
-        let content = content.unwrap();
-        let doc = YDoc::new();
-        let mut txn = doc.transact_mut();
-        let vector  = match Update::decode_v2(&*content.data) {
-            Ok(x) => x,
-            Err(_) => return
-        };
-        if let Err(_) = txn.apply_update(vector) {
-            return ;
-        }
     }
 }

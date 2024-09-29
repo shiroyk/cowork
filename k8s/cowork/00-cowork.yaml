@@ -89,7 +89,8 @@ data:
     mongodb: ${DOC_DB_URL}
     nats: ${NATS_URL}
     stream:
-      wait: 10
+      wait: 5
+      flush_size: 16
 
 ---
 

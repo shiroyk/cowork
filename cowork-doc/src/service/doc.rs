@@ -1,11 +1,17 @@
-use std::time::Instant;
+use std::str::FromStr;
+use std::time::{Instant, SystemTime};
+use bytes::Bytes;
+use log::debug;
 use crate::model::{Doc, DocContent, DocQuery, DocVector, COLL_CONTENT_NAME, COLL_DOC_NAME, COLL_VECTOR_NAME, DB_NAME};
-use mongodb::bson::{doc, Document};
+use mongodb::bson::{doc, Binary, Document};
 use mongodb::error::Error;
 use mongodb::{Client, Database, IndexModel};
 use mongodb::bson::oid::ObjectId;
+use mongodb::bson::spec::BinarySubtype;
 use mongodb::options::IndexOptions;
 use tonic::codegen::tokio_stream::StreamExt;
+use yrs::{Doc as YDoc, Transact, Update};
+use yrs::updates::decoder::Decode;
 
 pub async fn create_index(client: &Client) {
     let database = client.database(DB_NAME);
@@ -93,7 +99,83 @@ pub async fn delete(db: &Database, id: String) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn load_doc(db: &Database, id: String) -> Result<Option<DocContent>, Error> {
-    let result = db.collection::<DocContent>(COLL_CONTENT_NAME).find_one(doc! { "did": id }).await?;
-    Ok(result)
+
+/// flush content and return the content
+pub async fn flush_content(db: &Database, did: String) -> Result<Vec<u8>, Error> {
+    let mut session = db.client().start_session().await?;
+    session.start_transaction().await?;
+
+    // find the latest vector
+    let latest = db.collection::<Document>(COLL_VECTOR_NAME)
+        .find_one(doc! { "did": did.clone() })
+        .projection(doc! { "_id": 1 }).session(&mut session).sort(doc! { "_id": -1 })
+        .await?;
+    let vector = if let Some(mut v) = latest {
+        v.get_object_id_mut("_id").unwrap().to_string()
+    } else {
+        "".to_string()
+    };
+
+    // load the content
+    let coll = db.collection::<DocContent>(COLL_CONTENT_NAME);
+    let mut content = if let Some(x) = coll
+        .find_one(doc! { "did": did.clone() }).session(&mut session).await? {
+        x
+    } else {
+        DocContent { id: None, vector: "".to_string(), wait_flush: 0, did: did.clone(), data: Bytes::new() }
+    };
+
+    if content.vector == vector {
+        return Ok(content.data.to_vec());
+    }
+
+    // load the vector
+    let mut query = doc! { "did": did.clone() };
+    if !content.vector.is_empty() {
+        query.insert("_id", doc! { "$gt": ObjectId::from_str(&content.vector).unwrap() });
+    }
+    let mut vectors = db.collection::<DocVector>(COLL_VECTOR_NAME)
+        .find(query).session(&mut session).await?;
+    let vec = vectors.stream(&mut session)
+        .map(|x| x.unwrap()).collect::<Vec<DocVector>>().await;
+    let mut flushed = 0;
+
+    {
+        let doc = YDoc::new();
+        let mut txn = doc.transact_mut();
+        if let Ok(x) = Update::decode_v2(&*content.data) {
+            let _ = txn.apply_update(x);
+        }
+
+        // apply the updates
+        for v in vec {
+            if let Ok(x) = Update::decode_v2(&*v.data.to_vec()) {
+                let _ = txn.apply_update(x);
+                flushed += 1;
+            }
+        }
+        txn.commit();
+
+        content.data = Bytes::from(txn.encode_update_v2());
+    }
+
+    let data = content.data.to_vec();
+    content.vector = vector.clone();
+    // save the content
+    if content.id.is_none() {
+        content.id = Some(ObjectId::new().to_string());
+        coll.insert_one(content).session(&mut session).await?;
+    } else {
+        let data = Binary { subtype: BinarySubtype::Generic, bytes: data.clone() };
+        let update = doc! { "$set": { "data": data, "vector": vector }, "$inc": { "waitFlush": -flushed } };
+        coll.update_one(doc! { "did": did.clone() }, update)
+            .session(&mut session).await?;
+        session.commit_transaction().await?;
+    }
+
+    debug!("{}: => doc flush vectors {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs(), flushed);
+
+    session.commit_transaction().await?;
+
+    Ok(data)
 }

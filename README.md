@@ -87,6 +87,3 @@ open the page
 
 ## Reference
 - [Yjs](https://github.com/yjs/yjs)
-- [Yjs Internals](https://github.com/yjs/yjs/blob/main/INTERNALS.md)
-- [Yjs: A Framework for Near Real-Time P2P Shared Editing on Arbitrary Data Types](http://dbis.rwth-aachen.de/~derntl/papers/preprints/icwe2015-preprint.pdf)
-- [Real Differences between OT and CRDT for Co-Editors](https://arxiv.org/ftp/arxiv/papers/1810/1810.02137.pdf)

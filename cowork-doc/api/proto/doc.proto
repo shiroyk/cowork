@@ -9,20 +9,9 @@ option java_package = "doc.api";
 import "google/protobuf/wrappers.proto";
 
 service DocService {
-    rpc verifyPermission(VerifyRequest) returns (VerifyResponse) {}
-    rpc findNodesByDid(google.protobuf.StringValue) returns (DocNodes) {}
+    rpc findContentByDid(google.protobuf.StringValue) returns (DocContent) {}
 }
 
-message VerifyRequest {
-  string uid = 1;
-  string did = 2;
-}
-
-message VerifyResponse {
-  bool ok = 1;
-  string msg = 2;
-}
-
-message DocNodes {
-  repeated bytes nodes = 1;
+message DocContent {
+    bytes data = 1;
 }
