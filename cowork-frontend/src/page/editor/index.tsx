@@ -6,6 +6,7 @@ import useEvent, { Message, DocEvent, ConnectStatus } from "../../hooks/event.ts
 import useUser, { Users } from "./user.ts";
 import useDoc from "./doc.ts";
 import { decode } from "@msgpack/msgpack";
+import History from "./history.tsx";
 
 type MessageHandler = (msg: Message) => void;
 
@@ -18,6 +19,7 @@ export default function Editor() {
   const [lastSave, setLastSave] = useState<string | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<Users | null>(null);
   const [saving, setSaving] = useState(false);
+  const [did, setDid] = useState<string | null>(null);
 
   const { getUserId, signUp, signIn, validToken } = useUser();
   const { getOrAddDoc } = useDoc();
@@ -74,6 +76,7 @@ export default function Editor() {
     const uid = getUserId();
     (async () => {
       const did = await getOrAddDoc(uid);
+      setDid(did);
       connect(did);
       ydoc.on("updateV2", (update, or) => {
         if (!or) return;
@@ -101,7 +104,8 @@ export default function Editor() {
           </button>
         )}
         <div style={{ flex: 1 }}></div>
-        <div style={{ marginRight: 10, color: "green" }}>{saving ? "Saving..." : lastSave}</div>
+        {did && <History did={did}/>}
+        <div style={{ color: "green" }}>{saving ? "Saving..." : lastSave}</div>
       </div>
       <div className="editor-box">
         <MonacoEditor

@@ -16,7 +16,7 @@ button:hover {
 
 .btn {
   height: 45px;
-  padding: 0 5px;
+  padding: 0 10px;
   display: flex;
   flex-direction: row;
   align-items: center;

@@ -99,6 +99,12 @@ pub async fn delete(db: &Database, id: String) -> Result<(), Error> {
     Ok(())
 }
 
+pub async fn doc_vector(db: &Database, did: String) -> Result<Vec<DocVector>, Error> {
+    let coll = db.collection::<DocVector>(COLL_VECTOR_NAME);
+    let result = coll.find(doc! { "did": did }).await?;
+    let x = result.map(|x| x.unwrap()).collect::<Vec<DocVector>>().await;
+    Ok(x)
+}
 
 /// flush content and return the content
 pub async fn flush_content(db: &Database, did: String) -> Result<Vec<u8>, Error> {

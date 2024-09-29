@@ -1,6 +1,6 @@
 use crate::handler::error::HttpError;
 use crate::model::{Doc, DocQuery};
-use crate::service::{create, delete, find_by_id, search, update};
+use crate::service::{create, delete, doc_vector, find_by_id, search, update};
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use mongodb::Database;
 use std::collections::HashMap;
@@ -35,11 +35,18 @@ async fn doc_delete(db: web::Data<Database>, id: web::Path<String>) -> Result<Ht
     Ok(HttpResponse::NoContent().finish())
 }
 
+#[get("/api/{id}/vectors")]
+async fn doc_vector_get(db: web::Data<Database>, id: web::Path<String>) -> Result<HttpResponse, HttpError> {
+    let data = doc_vector(db.get_ref(), id.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(data))
+}
+
 pub fn init_handler(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/ping").route(web::to(|| { HttpResponse::NoContent() })))
         .service(doc_search)
         .service(doc_create)
         .service(doc_single)
         .service(doc_update)
-        .service(doc_delete);
+        .service(doc_delete)
+        .service(doc_vector_get);
 }
