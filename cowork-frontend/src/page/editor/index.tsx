@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Doc, applyUpdateV2 } from "yjs";
+import { Doc, applyUpdateV2, Transaction } from "yjs";
 import { MonacoBinding } from "y-monaco";
-import MonacoEditor, { EditorDidMount, monaco } from "react-monaco-editor";
+import MonacoEditor, { monaco } from "react-monaco-editor";
 import useEvent, { Message, DocEvent, ConnectStatus } from "../../hooks/event.ts";
 import useUser, { Users } from "./user.ts";
-import useDoc from "./doc.ts";
+import useDoc, { DocInfo } from "./doc.ts";
 import { decode } from "@msgpack/msgpack";
 import History from "./history.tsx";
 import { Loading } from "../../components/loading";
 import "./index.css";
+import { randomColor } from "../../utils";
 
 type MessageHandler = (msg: Message) => void;
 
@@ -20,16 +21,15 @@ export default function Editor() {
   const [content, setContent] = useState("");
   const [onlineUsers, setOnlineUsers] = useState<Users | null>(null);
   const [saving, setSaving] = useState(-1);
-  const [did, setDid] = useState<string | null>(null);
+  const [docInfo, setDocInfo] = useState<DocInfo | null>(null);
 
-  const { getUserId, signUp, signIn, validToken } = useUser();
+  const { getInfo, signUp, signIn } = useUser();
   const { getOrAddDoc } = useDoc();
-  const { status, connect, send, close, disconnectMsg } = useEvent({
+  const { status, connect, send, disconnectMsg } = useEvent({
     onMessage: msg => handlers[msg.event]?.(msg)
   });
 
-  const ydoc = new Doc();
-  const ytext = ydoc.getText("text");
+  const doc = useRef<Doc>();
 
   const handleOpenLogin = () => dialogRef.current?.showModal();
 
@@ -37,23 +37,22 @@ export default function Editor() {
 
   const handleSignUp = async () => await signUp(username, password);
 
-  const handleSignIn = async () => {
-    (await signIn(username, password)) && location.reload();
-  };
+  const handleSignIn = async () => (await signIn(username, password)) && location.reload();
 
   const onChange = (v: string) => setContent(v);
 
-  const editorDidMount: EditorDidMount = (editor) => {
-    editorRef.current = editor;
-    editor.focus();
-    new MonacoBinding(ytext, editor.getModel()!, new Set([editor]));
-  };
-
   const onLoginOut: MessageHandler = (msg) => setOnlineUsers(msg.data ? (decode(msg.data) as Users) : null)
 
-  const onUpdate: MessageHandler = (msg) => applyUpdateV2(ydoc, msg.data);
+  const onUpdate: MessageHandler = (msg) => {
+    if (!doc.current || !msg.data) return;
+    const content = decode(msg.data) as { client_id: number, data: Uint8Array };
+    content.data && applyUpdateV2(doc.current, content.data);
+    // set client id from server
+    doc.current.clientID = content.client_id;
+  };
 
   const onSave: MessageHandler = (msg) => {
+    if (!msg.data) return;
     const saved = (decode(msg.data) as number);
     setSaving(p => p - saved);
   };
@@ -66,23 +65,34 @@ export default function Editor() {
     [DocEvent.SaveEvent]: onSave,
   };
 
+  const initEditor = async () => {
+    const info = await getOrAddDoc();
+    setDocInfo(info);
+    connect(info.did);
+    const ydoc = new Doc();
+    ydoc.guid = info.did;
+    doc.current = ydoc;
+    if (editorRef.current) {
+      editorRef.current.focus();
+      new MonacoBinding(ydoc.getText("main"), editorRef.current.getModel()!, new Set([editorRef.current]));
+    }
+    ydoc.on("updateV2", (update: Uint8Array, txn: Transaction) => {
+      if (!txn) return;
+      send({ data: update, event: DocEvent.UpdateEvent });
+      setSaving(p => p + 1);
+    });
+  }
+
   useEffect(() => {
-    if (!validToken()) return;
-    const uid = getUserId();
     (async () => {
-      const did = await getOrAddDoc(uid);
-      setDid(did);
-      connect(did);
-      ydoc.on("updateV2", (update, or) => {
-        if (!or) return;
-        send({ data: update, event: DocEvent.UpdateEvent });
-        setSaving(p => p+1);
-      });
-    })();
-    return () => close();
+      const info = await getInfo();
+      if (!info) return;
+      await initEditor();
+    })()
+    return close;
   }, []);
 
-  const showSaving = status === ConnectStatus.Connected && saving >= 0;
+  const showSaving = status === ConnectStatus.Connected && saving > -1;
 
   return (
     <>
@@ -92,8 +102,13 @@ export default function Editor() {
             <div style={{ color: "red" }}>
               {disconnectMsg}
             </div> :
-            <div style={{ color: "#74ffb0" }}>
-              {onlineUsers?.map(i => i.username).join(" | ")}
+            <div style={{ display: "flex", gap: 5 }}>
+              {onlineUsers?.map((u, i) =>
+                <span key={u.id}>
+                  <span style={{ color: randomColor() }}>{u.username}</span>
+                  {i < onlineUsers.length - 1 && <span> | </span>}
+                </span>
+              )}
             </div>
         ) : (
           <button type="button" onClick={handleOpenLogin}>
@@ -101,19 +116,23 @@ export default function Editor() {
           </button>
         )}
         <div style={{ flex: 1 }}></div>
-        {did && <History did={did}/>}
+        {status === ConnectStatus.Connected && <History value={docInfo}/>}
         {showSaving && <div className="saving"><Loading/>{"Saving..."}</div>}
       </div>
       <div className="editor-box">
         <MonacoEditor
           width={"100%"}
           height={window.innerHeight - 45}
-          language="javascript"
+          language="markdown"
           theme="vs-dark"
           value={content}
-          options={{ automaticLayout: true }}
+          options={{
+            automaticLayout: true,
+            readOnly: status !== ConnectStatus.Connected,
+            readOnlyMessage: { value: "Please login first" }
+          }}
           onChange={onChange}
-          editorDidMount={editorDidMount}
+          editorDidMount={(e) => editorRef.current = e}
         />
       </div>
       <dialog className="login-dialog" ref={dialogRef}>

@@ -12,12 +12,12 @@ import (
 	"github.com/gobwas/ws/wsutil"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
+	"github.com/shiroyk/cowork/doc/api/generated/golang/api"
 	docclient "github.com/shiroyk/cowork/doc/api/golang/client"
 	"github.com/shiroyk/cowork/doc/api/golang/event"
 	userapi "github.com/shiroyk/cowork/user/api/generated/golang/api"
 	userclient "github.com/shiroyk/cowork/user/api/golang/client"
 	"github.com/vmihailenco/msgpack/v5"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Hub maintains the client connections
@@ -191,30 +191,42 @@ func (hub *Hub) redisDocUsers(client *Client, act action) []byte {
 		return nil
 	}
 
-	enc := msgpack.GetEncoder()
-	defer msgpack.PutEncoder(enc)
-
-	var buf bytes.Buffer
-	enc.Reset(&buf)
-	enc.SetCustomStructTag("json") // use the json tag
-	if err = enc.Encode(users.Item); err != nil {
+	data, err := marshalWithTag(users.Item)
+	if err != nil {
 		slog.Warn("failed marshal users message", slog.String("error", err.Error()),
 			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)
 		return nil
 	}
 
-	return buf.Bytes()
+	return data
 }
 
 // docContent get all doc content
 func (hub *Hub) docContent(client *Client) []byte {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	content, err := hub.doc.FindContentByDid(ctx, wrapperspb.String(client.did))
+	content, err := hub.doc.FindContent(ctx, &api.DocContentReq{Did: client.did, Uid: client.uid})
 	if err != nil {
 		slog.Warn("failed get doc content", slog.String("error", err.Error()),
 			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyGRPC)
 		return nil
 	}
-	return content.Data
+	data, err := marshalWithTag(content)
+	if err != nil {
+		slog.Warn("failed marshal doc content", slog.String("error", err.Error()),
+			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)
+		return nil
+	}
+	return data
+}
+
+func marshalWithTag(v any) ([]byte, error) {
+	enc := msgpack.GetEncoder()
+	defer msgpack.PutEncoder(enc)
+
+	var buf bytes.Buffer
+	enc.Reset(&buf)
+	enc.SetCustomStructTag("json") // use the json tag
+	err := enc.Encode(v)
+	return buf.Bytes(), err
 }

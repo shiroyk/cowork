@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -14,7 +15,10 @@ pub struct Doc {
     #[serde(default = "default_id")]
     pub did: String,
     pub title: String,
+    #[serde(default)]
     pub uid: String,
+    #[serde(default)]
+    pub clients: HashMap<String, i32>,
     #[serde(default)]
     pub trash: bool,
     #[serde(default)]

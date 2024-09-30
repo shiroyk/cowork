@@ -1,5 +1,5 @@
 mod doc;
-mod error;
+mod util;
 
 pub use self::{
     doc::init_handler,

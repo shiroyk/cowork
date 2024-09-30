@@ -20,7 +20,7 @@ export interface Message {
   event: DocEvent;
   uid?: string;
   did?: string;
-  data: Uint8Array;
+  data: Uint8Array | null;
 }
 
 interface Props {
@@ -39,7 +39,7 @@ export default function useEvent(props: Props) {
     } catch (e) {
       console.log(e);
       showToast(`failed to connect server: ${e}`, { type: "error" });
-      return;
+      throw e;
     }
     ws.current.onopen = () => {
       setStatus(ConnectStatus.Connected);

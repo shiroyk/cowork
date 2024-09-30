@@ -21,7 +21,11 @@ export function params(params: any): string {
         continue;
       } else if (Array.isArray(value)) {
         if (!value.length) continue;
-        value = value.join(",");
+        let k = encodeURIComponent(key);
+        for (const v of value) {
+          str += k + "=" + encodeURIComponent(v) + "&";
+        }
+        continue;
       }
       str += encodeURIComponent(key) + "=" + encodeURIComponent(value) + "&";
     }

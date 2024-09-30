@@ -1,9 +1,8 @@
-use crate::handler::error::HttpError;
+use crate::handler::util::{HttpError, UserID};
 use crate::model::{Doc, DocQuery};
 use crate::service::{create, delete, doc_vector, find_by_id, search, update};
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use mongodb::Database;
-use std::collections::HashMap;
 
 #[get("/api")]
 async fn doc_search(db: web::Data<Database>, query: web::Query<DocQuery>) -> Result<HttpResponse, HttpError> {
@@ -11,10 +10,12 @@ async fn doc_search(db: web::Data<Database>, query: web::Query<DocQuery>) -> Res
     Ok(HttpResponse::Ok().json(x))
 }
 
-#[post("/api")]
-async fn doc_create(db: web::Data<Database>, doc: web::Json<Doc>) -> Result<HttpResponse, HttpError> {
-    let x = create(db.get_ref(), doc.into_inner()).await?;
-    Ok(HttpResponse::Ok().json(HashMap::from([("id", x)])))
+ #[post("/api")]
+async fn doc_create(db: web::Data<Database>, doc: web::Json<Doc>, id: web::Header<UserID>) -> Result<HttpResponse, HttpError> {
+    let mut doc = doc.into_inner();
+    doc.uid = id.0.into_inner();
+    let x = create(db.get_ref(), doc).await?;
+    Ok(HttpResponse::Ok().json(x))
 }
 
 #[get("/api/{id}")]

@@ -1,7 +1,7 @@
 use log::error;
-use crate::service::flush_content;
+use crate::service::{flush_content, get_doc_client_id};
 use doc_api::doc_service_server::{DocService, DocServiceServer};
-use doc_api::DocContent as Content;
+use doc_api::{DocContent as Content, DocContentReq};
 use mongodb::Database;
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
@@ -12,18 +12,32 @@ pub struct DocServiceImpl {
 
 #[tonic::async_trait]
 impl DocService for DocServiceImpl {
-    async fn find_content_by_did(
+    async fn find_content(
         &self,
-        request: Request<String>,
+        request: Request<DocContentReq>,
     ) -> Result<Response<Content>, Status> {
-        let data = match flush_content(&self.db, request.into_inner()).await {
+        let req = request.into_inner();
+        let result = match get_doc_client_id(&self.db, req.did.clone(), req.uid).await {
             Ok(x) => x,
             Err(e) => {
                 error!("failed to flush content: {}", e);
                 return Err(Status::internal(e.to_string()))
             },
         };
-        Ok(Response::new(Content { data }))
+
+        let client_id = match result {
+            Some(x) => x,
+            None => return Err(Status::not_found("doc not found")),
+        };
+
+        let data = match flush_content(&self.db, req.did).await {
+            Ok(x) => x,
+            Err(e) => {
+                error!("failed to flush content: {}", e);
+                return Err(Status::internal(e.to_string()))
+            },
+        };
+        Ok(Response::new(Content { data, client_id }))
     }
 }
 

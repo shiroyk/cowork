@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::str::FromStr;
 use std::time::{Instant, SystemTime};
 use bytes::Bytes;
@@ -5,7 +6,7 @@ use log::debug;
 use crate::model::{Doc, DocContent, DocQuery, DocVector, COLL_CONTENT_NAME, COLL_DOC_NAME, COLL_VECTOR_NAME, DB_NAME};
 use mongodb::bson::{doc, Binary, Document};
 use mongodb::error::Error;
-use mongodb::{Client, Database, IndexModel};
+use mongodb::{bson, Client, Database, IndexModel};
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::spec::BinarySubtype;
 use mongodb::options::IndexOptions;
@@ -59,16 +60,16 @@ pub async fn find_by_id(db: &Database, id: String) -> Result<Option<Doc>, Error>
     Ok(result)
 }
 
-pub async fn create(db: &Database, mut doc: Doc) -> Result<String, Error> {
+pub async fn create(db: &Database, mut doc: Doc) -> Result<Doc, Error> {
     let collection = db.collection(COLL_DOC_NAME);
     if doc.did.is_empty() {
         doc.did = ObjectId::new().to_string();
     }
     doc.created_at = Instant::now().elapsed().as_secs() as i64;
     doc.updated_at = doc.created_at;
-    let did = doc.did.clone();
+    let doc_ref = doc.clone();
     collection.insert_one(doc).await?;
-    Ok(did)
+    Ok(doc_ref)
 }
 
 pub async fn update(db: &Database, doc: Doc) -> Result<(), Error> {
@@ -184,4 +185,36 @@ pub async fn flush_content(db: &Database, did: String) -> Result<Vec<u8>, Error>
     session.commit_transaction().await?;
 
     Ok(data)
+}
+
+pub async fn get_doc_client_id(db : &Database, did: String, uid: String) -> Result<Option<i32>, Error> {
+    let mut session = db.client().start_session().await?;
+    session.start_transaction().await?;
+    let coll = db.collection::<Doc>(COLL_DOC_NAME);
+
+    let doc = match coll.find_one(doc! { "did": did }).await? {
+        Some(x) => x,
+        None => return Ok(None),
+    };
+
+    if let Some(v) = doc.clients.get(&uid) {
+        return Ok(Some(v.clone()));
+    }
+    let clients = doc.clients.values().cloned().collect::<HashSet<i32>>();
+
+    let mut rng = fastrand::Rng::new();
+    let mut new_id = rng.i32(0..i32::MAX);
+
+    while clients.contains(&new_id) {
+        new_id = rng.i32(0..i32::MAX);
+    }
+    let mut doc_clients = doc.clients.clone();
+    doc_clients.insert(uid, new_id);
+    let data = bson::to_document(&doc_clients)?;
+    coll.update_one(doc! { "did": doc.did }, doc! { "$set": { "clients": data } })
+        .session(&mut session).await?;
+
+    session.commit_transaction().await?;
+
+    Ok(Some(new_id))
 }
