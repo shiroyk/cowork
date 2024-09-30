@@ -48,7 +48,7 @@ sequenceDiagram
             nginx -->> client: Websocket <br> {event: Login...}
         end
         par doc nodes
-            collab ->> doc: GRPC FindNodesByDid <br> {did}
+            collab ->> doc: GRPC FindContentByDid <br> {did}
             activate doc
             doc -->> collab: GRPC OK <br>{nodes...}
             deactivate doc
@@ -71,18 +71,6 @@ sequenceDiagram
                 collab -->> nginx: Websocket <br> {event: Update...}
                 nginx -->> client: Websocket <br> {event: Update...}
             end
-        end
-        loop doc event fetch
-            doc ->> nats: FETCH 20 events.update
-            activate nats
-            nats -->> doc: MSG events.update <br> {event: Update...}
-            doc ->> doc: SAVE []{did,uid,data}
-            doc -->> nats: MSG events.save <br> {event: Save...}
-            nats -->> collab: MSG events.save <br> {event: Save...}
-            deactivate nats
-            collab -->> nginx: MSG events.save <br> {event: Save...}
-            deactivate collab
-            nginx -->> client: Websocket <br> {event: Save...}
         end
         deactivate nginx
     end
