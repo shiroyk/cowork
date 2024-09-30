@@ -3,7 +3,7 @@ import { Doc, applyUpdateV2, Transaction } from "yjs";
 import { MonacoBinding } from "y-monaco";
 import MonacoEditor, { monaco } from "react-monaco-editor";
 import useEvent, { Message, DocEvent, ConnectStatus } from "../../hooks/event.ts";
-import useUser, { Users } from "./user.ts";
+import useUser, { User, Users } from "./user.ts";
 import useDoc, { DocInfo } from "./doc.ts";
 import { decode } from "@msgpack/msgpack";
 import History from "./history.tsx";
@@ -19,7 +19,7 @@ export default function Editor() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [content, setContent] = useState("");
-  const [onlineUsers, setOnlineUsers] = useState<Users | null>(null);
+  const [onlineUsers, setOnlineUsers] = useState<(User & { color: string })[] | null>(null);
   const [saving, setSaving] = useState(-1);
   const [docInfo, setDocInfo] = useState<DocInfo | null>(null);
 
@@ -41,14 +41,20 @@ export default function Editor() {
 
   const onChange = (v: string) => setContent(v);
 
-  const onLoginOut: MessageHandler = (msg) => setOnlineUsers(msg.data ? (decode(msg.data) as Users) : null)
+  const onLoginOut: MessageHandler = (msg) => setOnlineUsers(msg.data ? (decode(msg.data) as Users)
+    .map(u => ({ ...u, color: randomColor() })) : null)
 
-  const onUpdate: MessageHandler = (msg) => {
+  const onSync: MessageHandler = (msg) => {
     if (!doc.current || !msg.data) return;
     const content = decode(msg.data) as { client_id: number, data: Uint8Array };
     content.data && applyUpdateV2(doc.current, content.data);
     // set client id from server
     doc.current.clientID = content.client_id;
+  };
+
+  const onUpdate: MessageHandler = (msg) => {
+    if (!doc.current || !msg.data) return;
+    applyUpdateV2(doc.current, msg.data);
   };
 
   const onSave: MessageHandler = (msg) => {
@@ -60,7 +66,7 @@ export default function Editor() {
   const handlers: Record<DocEvent, MessageHandler> = {
     [DocEvent.LoginEvent]: onLoginOut,
     [DocEvent.LogoutEvent]: onLoginOut,
-    [DocEvent.SyncEvent]: onUpdate,
+    [DocEvent.SyncEvent]: onSync,
     [DocEvent.UpdateEvent]: onUpdate,
     [DocEvent.SaveEvent]: onSave,
   };
@@ -105,7 +111,7 @@ export default function Editor() {
             <div style={{ display: "flex", gap: 5 }}>
               {onlineUsers?.map((u, i) =>
                 <span key={u.id}>
-                  <span style={{ color: randomColor() }}>{u.username}</span>
+                  <span style={{ color: u.color }}>{u.username}</span>
                   {i < onlineUsers.length - 1 && <span> | </span>}
                 </span>
               )}
