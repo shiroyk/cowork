@@ -1,0 +1,13 @@
+.loading-container {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+    border-top-color: #3498db;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

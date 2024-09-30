@@ -2,7 +2,6 @@ import { useState } from "react";
 import Dialog from "../../components/dialog";
 import api from "../../api";
 import { applyUpdateV2, Doc } from "yjs";
-import "./index.css";
 
 interface Vector {
   uid: string;

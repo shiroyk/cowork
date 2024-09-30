@@ -84,7 +84,7 @@ func (g *GrpcService) FindByName(ctx context.Context, value *wrapperspb.StringVa
 
 func (g *GrpcService) sessions(ctx context.Context, user *api.User) {
 	var sessions []*api.Session
-	g.db.Table(TableSession).WithContext(ctx).Find(&sessions, "userId = ?", user.Id)
+	g.db.Table(TableSession).WithContext(ctx).Find(&sessions, "user_id = ?", user.Id)
 	user.Sessions = sessions
 }
 
@@ -174,7 +174,7 @@ func (g *GrpcService) SaveSession(ctx context.Context, action *api.SessionAction
 		db.Table(TableSession).Update("lastUsage", action.Session.Timestamp)
 	case api.SessionAction_Logout:
 		// Delete session
-		err = db.Table(TableSession).Delete(&api.Session{}, action.Session.Id).Error
+		err = db.Table(TableSession).Delete(&api.Session{}, "id = ?", action.Session.Id).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, common.ApiError{

@@ -9,7 +9,7 @@ use bytes::Bytes;
 use jetstream::consumer::pull::Config as ConsumerConfig;
 use mongodb::bson::{doc, Document};
 use mongodb::Database;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::env;
 use std::time::SystemTime;
 use tokio::spawn;
@@ -129,34 +129,36 @@ impl EventStream {
     }
 
     async fn persist(&self, vectors: Vec<DocVector>) -> Result<(), mongodb::error::Error> {
-        debug!("{}: => doc persistence start {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs(), vectors.len());
-        let mut saved = HashMap::<String, (HashSet<String>, u16)>::new();
+        debug!("=> doc persistence start {}", vectors.len());
+        let mut saved_map = HashMap::<String, Saved>::new();
         for x in &vectors {
-            if let Some(set) = saved.get_mut(&x.did) {
-                set.0.insert(x.uid.clone());
-                set.1 += 1;
+            if let Some(saved) = saved_map.get_mut(&x.did) {
+                if let Some(x) = saved.user.get_mut(&x.uid) {
+                    *x += 1;
+                } else {
+                    saved.user.insert(x.uid.clone(), 1);
+                }
+                saved.size += 1;
             } else {
-                saved.insert(x.did.clone(), (HashSet::from([x.uid.clone()]), 1));
+                saved_map.insert(x.did.clone(), Saved { user: HashMap::from([(x.uid.clone(), 1)]), size: 1 });
             }
         }
+        debug!("=> doc saved map {:?}", saved_map);
 
         // persistence doc updates
+        let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64;
         self.db.collection(COLL_VECTOR_NAME).insert_many(vectors).await?;
 
         let subject = Event::Save.subject();
-        let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64;
-        let now_data = rmp_serde::to_vec(&now).unwrap();
 
         let coll_doc = self.db.collection::<Doc>(COLL_DOC_NAME);
         let save_message = CollabMessage {
             event: Event::Save,
-            uid: "".to_string(),
-            did: "".to_string(),
-            data: Bytes::from(now_data),
+            ..Default::default()
         };
 
         // update last_updated and publish save events
-        for (did, p) in saved {
+        for (did, saved) in saved_map {
             let result = match coll_doc.update_one(
                 doc! { "did": did.clone() },
                 doc! { "$set": { "lastUpdated": now } })
@@ -172,7 +174,7 @@ impl EventStream {
             let content = self.db.collection::<Document>(COLL_CONTENT_NAME)
                 .find_one_and_update(
                     doc! { "did": did.clone() },
-                    doc! { "$inc": { "waitFlush": p.1 as i32 } },
+                    doc! { "$inc": { "waitFlush": saved.size as i32 } },
                 ).projection(doc! { "waitFlush": 1 }).await?;
             if let Some(v) = content {
                 if v.get_i32("waitFlush").unwrap_or(0) >= self.cfg.flush_size as i32 {
@@ -186,10 +188,11 @@ impl EventStream {
                 }
             }
 
-            for uid in p.0 {
+            for (uid, size) in saved.user {
                 let mut msg = save_message.clone();
                 msg.uid = uid;
                 msg.did = did.clone();
+                msg.data = Bytes::from(rmp_serde::to_vec(&size).unwrap());
                 let data = match rmp_serde::to_vec_named(&msg) {
                     Ok(data) => data,
                     Err(_) => continue
@@ -200,4 +203,10 @@ impl EventStream {
         let _ = self.client.flush().await;
         Ok(())
     }
+}
+
+#[derive(Debug, Clone)]
+struct Saved {
+    user: HashMap<String, u16>,
+    size: u16,
 }

@@ -7,6 +7,8 @@ import useUser, { Users } from "./user.ts";
 import useDoc from "./doc.ts";
 import { decode } from "@msgpack/msgpack";
 import History from "./history.tsx";
+import { Loading } from "../../components/loading";
+import "./index.css";
 
 type MessageHandler = (msg: Message) => void;
 
@@ -16,9 +18,8 @@ export default function Editor() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [content, setContent] = useState("");
-  const [lastSave, setLastSave] = useState<string | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<Users | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(-1);
   const [did, setDid] = useState<string | null>(null);
 
   const { getUserId, signUp, signIn, validToken } = useUser();
@@ -53,14 +54,8 @@ export default function Editor() {
   const onUpdate: MessageHandler = (msg) => applyUpdateV2(ydoc, msg.data);
 
   const onSave: MessageHandler = (msg) => {
-    const date = new Date((decode(msg.data) as number) * 1000);
-    setSaving(false);
-    setLastSave(
-      "Saved at ✔️ " +
-      date.toLocaleString("en-US", {
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      })
-    );
+    const saved = (decode(msg.data) as number);
+    setSaving(p => p - saved);
   };
 
   const handlers: Record<DocEvent, MessageHandler> = {
@@ -80,12 +75,14 @@ export default function Editor() {
       connect(did);
       ydoc.on("updateV2", (update, or) => {
         if (!or) return;
-        setSaving(true);
         send({ data: update, event: DocEvent.UpdateEvent });
+        setSaving(p => p+1);
       });
     })();
     return () => close();
   }, []);
+
+  const showSaving = status === ConnectStatus.Connected && saving >= 0;
 
   return (
     <>
@@ -95,7 +92,7 @@ export default function Editor() {
             <div style={{ color: "red" }}>
               {disconnectMsg}
             </div> :
-            <div style={{ color: "green" }}>
+            <div style={{ color: "#74ffb0" }}>
               {onlineUsers?.map(i => i.username).join(" | ")}
             </div>
         ) : (
@@ -105,7 +102,7 @@ export default function Editor() {
         )}
         <div style={{ flex: 1 }}></div>
         {did && <History did={did}/>}
-        <div style={{ color: "green" }}>{saving ? "Saving..." : lastSave}</div>
+        {showSaving && <div className="saving"><Loading/>{"Saving..."}</div>}
       </div>
       <div className="editor-box">
         <MonacoEditor

@@ -79,7 +79,7 @@ impl Event {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CollabMessage {
     #[serde(default)]
     pub event: Event,

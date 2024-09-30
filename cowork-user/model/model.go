@@ -40,7 +40,7 @@ type User struct {
 	Id       string           `json:"id"`
 	Username string           `json:"username" gorm:"unique;size:16"`
 	Nickname string           `json:"nickname" gorm:"size:16"`
-	Email    string           `json:"email" gorm:"unique;size:128"`
+	Email    string           `json:"email" gorm:"size:128"`
 	Avatar   sql.Null[string] `json:"avatar"`
 }
 

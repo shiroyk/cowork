@@ -4,3 +4,11 @@
     align-items: center;
     gap: 6px;
 }
+
+.saving {
+    color: #74ffb0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}

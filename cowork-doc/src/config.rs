@@ -4,7 +4,7 @@ use log::{Level, Metadata, Record};
 use mongodb::options::ClientOptions;
 use mongodb::Client;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 const BANNER: &str = r#"
   ____
@@ -77,12 +77,12 @@ struct SimpleLogger;
 
 impl log::Log for SimpleLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Info
+        metadata.level() <= Level::Debug
     }
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            println!("{} - {}", record.level(), record.args());
+            println!("{} {} - {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis(), record.level(), record.args());
         }
     }
 
@@ -94,14 +94,14 @@ static LOGGER: SimpleLogger = SimpleLogger;
 pub fn load_config() -> Config {
     println!("{}", common::blue(BANNER));
     let config = if is_dev() {
-        return Config {
+        Config {
             log_level: Level::Debug,
             http: "127.0.0.1:8083".to_string(),
             grpc: "127.0.0.1:9093".to_string(),
             nats: "nats://localhost:4222".to_string(),
             mongodb: "mongodb://dev:123456@localhost:27017/dev?authSource=admin&directConnection=true".to_string(),
             stream: StreamConfig::default(),
-        };
+        }
     } else {
         let result = read_config().expect("failed to read config file");
         serde_yaml::from_str::<Config>(result.as_str()).expect("failed to parse config file")
