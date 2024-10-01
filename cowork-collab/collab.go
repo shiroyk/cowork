@@ -42,6 +42,8 @@ func (hub *Hub) wsHandle(ctx *gin.Context) {
 		return
 	}
 
+	// TODO: user offline
+
 	client := &Client{uid, ctx.Param("did"), requestId, conn}
 	go func() {
 		defer hub.logout(client)

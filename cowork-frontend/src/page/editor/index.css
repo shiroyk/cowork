@@ -12,3 +12,24 @@
     align-items: center;
     gap: 6px;
 }
+
+.yRemoteSelection {
+    background-color: #3498db;
+}
+
+.yRemoteSelectionHead {
+    position: absolute;
+    width: 3px;
+    height: 100%;
+    box-sizing: border-box;
+    background-color: #3498db;
+}
+
+.yRemoteSelectionHead::after {
+    position: absolute;
+    content: ' ';
+    border: 3px solid;
+    border-radius: 4px;
+    left: -2px;
+    top: -5px;
+}

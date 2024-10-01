@@ -6,8 +6,11 @@ option go_package = "/api";
 option java_multiple_files = true;
 option java_package = "doc.api";
 
+import "google/protobuf/wrappers.proto";
+
 service DocService {
     rpc findContent(DocContentReq) returns (DocContent) {}
+    rpc findDoc(google.protobuf.StringValue) returns (Doc) {}
 }
 
 message DocContentReq {
@@ -18,4 +21,15 @@ message DocContentReq {
 message DocContent {
     bytes data = 1;
     int32 client_id = 2;
+}
+
+message Doc {
+    string did = 1;
+    string title = 2;
+    string uid = 3;
+    map<string, int32> clients = 4;
+    bool trash = 5;
+    int64 last_updated = 6;
+    int64 created_at = 7;
+    int64 updated_at = 8;
 }

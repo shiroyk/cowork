@@ -10,6 +10,7 @@ const (
 	Sync
 	Update
 	Save
+	Cursor
 )
 
 const (
@@ -24,6 +25,7 @@ var eventSubjects = [...]string{
 	Sync:   subjectPrefix + "sync",
 	Update: subjectPrefix + "update",
 	Save:   subjectPrefix + "save",
+	Cursor: subjectPrefix + "cursor",
 }
 
 func (e Event) String() string { return eventSubjects[e] }

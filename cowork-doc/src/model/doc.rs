@@ -65,6 +65,7 @@ pub enum Event {
     Sync = 3,
     Update = 4,
     Save = 5,
+    Cursor = 6,
 }
 
 impl Default for Event {
@@ -79,6 +80,7 @@ impl Event {
             Event::Sync => "events.sync",
             Event::Update => "events.update",
             Event::Save => "events.save",
+            Event::Cursor => "events.cursor",
         }.to_string()
     }
 }

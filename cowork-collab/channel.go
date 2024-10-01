@@ -18,6 +18,7 @@ import (
 	userapi "github.com/shiroyk/cowork/user/api/generated/golang/api"
 	userclient "github.com/shiroyk/cowork/user/api/golang/client"
 	"github.com/vmihailenco/msgpack/v5"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Hub maintains the client connections
@@ -114,15 +115,15 @@ func (hub *Hub) login(client *Client) {
 	slog.Debug("user login", slog.String("user_id", client.uid),
 		slog.String("did", client.did), slog.String("request_id", client.rid), keyWS)
 
-	{ // online users
-		msg := event.CollabMessage{Event: event.Login, Uid: client.uid, Did: client.did, Data: hub.redisDocUsers(client, actLogin)}
-		hub.broadcast("", msg)
-	}
-
 	{ // sync doc nodes
 		msg := event.CollabMessage{Event: event.Sync, Uid: client.uid, Did: client.did, Data: hub.docContent(client)}
 		data, _ := msgpack.Marshal(msg)
 		client.Write(data)
+	}
+
+	{ // online users
+		msg := event.CollabMessage{Event: event.Login, Uid: client.uid, Did: client.did, Data: hub.onlineDocUsers(client, actLogin)}
+		hub.broadcast("", msg)
 	}
 }
 
@@ -143,7 +144,7 @@ func (hub *Hub) logout(client *Client) {
 	hub.Unlock()
 
 	// online users
-	users := hub.redisDocUsers(client, actLogout)
+	users := hub.onlineDocUsers(client, actLogout)
 	if users == nil {
 		return
 	}
@@ -171,8 +172,13 @@ end
 return redis.call("SMEMBERS", key)
 `)
 
-// redisDocUsers add/remove doc online users from the Redis uid list and return the serialized bytes of users dto.
-func (hub *Hub) redisDocUsers(client *Client, act action) []byte {
+type onlineUser struct {
+	*userapi.UserList_Dto
+	ClientID int32 `json:"client_id"`
+}
+
+// onlineDocUsers add/remove doc online users from the Redis uid list and return the serialized bytes of users dto.
+func (hub *Hub) onlineDocUsers(client *Client, act action) []byte {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	all, err := actionScript.Run(ctx, hub.redis, []string{client.did}, client.uid, int(act)).StringSlice()
@@ -191,7 +197,22 @@ func (hub *Hub) redisDocUsers(client *Client, act action) []byte {
 		return nil
 	}
 
-	data, err := marshalWithTag(users.Item)
+	doc, err := hub.doc.FindDoc(ctx, &wrapperspb.StringValue{Value: client.did})
+	if err != nil {
+		slog.Warn("failed get doc", slog.String("error", err.Error()),
+			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyGRPC)
+		return nil
+	}
+
+	onlineUsers := make([]onlineUser, 0, len(all))
+	for _, user := range users.Item {
+		onlineUsers = append(onlineUsers, onlineUser{
+			UserList_Dto: user,
+			ClientID:     doc.Clients[user.Id],
+		})
+	}
+
+	data, err := marshalWithTag(onlineUsers)
 	if err != nil {
 		slog.Warn("failed marshal users message", slog.String("error", err.Error()),
 			slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)

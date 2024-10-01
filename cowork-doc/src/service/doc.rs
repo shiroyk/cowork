@@ -56,7 +56,7 @@ pub async fn search(db: &Database, query: DocQuery) -> Result<Vec<Doc>, Error> {
 
 pub async fn find_by_id(db: &Database, id: String) -> Result<Option<Doc>, Error> {
     let collection = db.collection(COLL_DOC_NAME);
-    let result = collection.find_one(doc! { "id": id }).await?;
+    let result = collection.find_one(doc! { "did": id }).await?;
     Ok(result)
 }
 
