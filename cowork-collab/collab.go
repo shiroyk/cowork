@@ -42,20 +42,36 @@ func (hub *Hub) wsHandle(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: user offline
+	// TODO: token expired
 
 	client := &Client{uid, ctx.Param("did"), requestId, conn}
 	go func() {
 		defer hub.logout(client)
 
 		hub.login(client)
-		var data []byte
 
 		for {
-			data, _, err = wsutil.ReadClientData(conn)
+			data, op, err := wsutil.ReadClientData(conn)
 			if err != nil {
 				break
 			}
+
+			switch op {
+			case ws.OpClose:
+				return
+			case ws.OpPing:
+				err = wsutil.WriteServerMessage(conn, ws.OpPong, nil)
+				if err != nil {
+					slog.Warn("failed write pong message", slog.String("error", err.Error()),
+						slog.String("user_id", client.uid), slog.String("request_id", client.rid), keyWS)
+				}
+				continue
+			}
+
+			if op != ws.OpBinary {
+				continue
+			}
+
 			var msg event.CollabMessage
 			if err = msgpack.Unmarshal(data, &msg); err != nil {
 				slog.Warn("failed marshal client message", slog.String("error", err.Error()),

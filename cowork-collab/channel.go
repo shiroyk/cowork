@@ -23,7 +23,7 @@ import (
 
 // Hub maintains the client connections
 type Hub struct {
-	sync.Mutex
+	sync.RWMutex
 	redis redis.UniversalClient
 	nats  *nats.Conn
 	doc   *docclient.Client
@@ -81,8 +81,8 @@ func newHub(
 
 // broadcast the channels, skip the user client if skip not empty
 func (hub *Hub) broadcast(skip string, msg event.CollabMessage) {
-	hub.Lock()
-	defer hub.Unlock()
+	hub.RLock()
+	defer hub.RUnlock()
 	slog.Debug("broadcast", slog.String("event", msg.Event.String()), slog.String("did", msg.Did), slog.String("uid", msg.Uid), keyStream)
 	// publish to stream
 	data, _ := msgpack.Marshal(msg)

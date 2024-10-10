@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"slices"
 
+	"github.com/gobwas/ws"
+	"github.com/gobwas/ws/wsutil"
 	"github.com/nats-io/nats.go"
 	common "github.com/shiroyk/cowork/common/golang"
 	"github.com/shiroyk/cowork/doc/api/golang/event"
@@ -36,6 +39,9 @@ func (hub *Hub) subscribe() *nats.Subscription {
 			return
 		}
 
+		hub.RLock()
+		defer hub.RUnlock()
+
 		// consume the message from stream
 		switch cm.Event {
 		case event.Save, event.Sync:
@@ -44,6 +50,22 @@ func (hub *Hub) subscribe() *nats.Subscription {
 				client.Write(msg.Data)
 			}
 		default:
+			if event.Login == cm.Event {
+				// login on another device
+				if client, ok := hub.clients[cm.Uid]; ok {
+					hub.RUnlock()
+					hub.Lock()
+					defer hub.Unlock()
+					wsutil.WriteServerMessage(client.conn, ws.OpClose, []byte("user logged in on another device"))
+					delete(hub.clients, cm.Uid)
+					channel, ok := hub.channels[client.did]
+					if ok {
+						hub.channels[client.did] = slices.DeleteFunc(channel, func(c *Client) bool { return c == client })
+					}
+					client.conn.Close()
+					return
+				}
+			}
 			clients, ok := hub.channels[cm.Did]
 			if !ok {
 				return
