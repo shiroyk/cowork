@@ -2,6 +2,6 @@
 target
 node_modules
 dist
-cowork-common/target
-cowork-doc/target
-cowork-doc/api/target
+editor-common/target
+editor-doc/target
+editor-doc/api/target

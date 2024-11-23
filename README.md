@@ -1,5 +1,5 @@
-# Cowork
-**Cowork** is an online real-time collaborative editing system, internal use of [Yjs CRDT](https://github.com/yjs/yjs) algorithm.
+# crdt-editor
+**crdt-editor** is an online real-time collaborative editing system, internal use of [Yjs CRDT](https://github.com/yjs/yjs) algorithm.
 
 ## Architecture
 ```mermaid
@@ -9,7 +9,7 @@ client([client]) --> ingress
 subgraph ingress
     ingress-pod(ingress-pod):::pod
 end
-subgraph cowork
+subgraph editor
     subgraph Deployment
         subgraph auth-service
             auth-pod(auth-pod):::pod
@@ -51,11 +51,11 @@ subgraph cowork
     collab-service --> redis-service
     collab-service --> nats-service
 end
-ingress -- api.cowork.local/auth --> auth-service
-ingress -- api.cowork.local/users --> user-service
-ingress -- api.cowork.local/docs --> doc-service
-ingress -- api.cowork.local/collab --> collab-service
-ingress -- app.cowork.local --> frontend-service
+ingress -- api.editor.local/auth --> auth-service
+ingress -- api.editor.local/users --> user-service
+ingress -- api.editor.local/docs --> doc-service
+ingress -- api.editor.local/collab --> collab-service
+ingress -- app.editor.local --> frontend-service
 ```
 ## Usage
 Install dependencies `docker`, [docker-buildx](https://github.com/docker/buildx), [minikube](https://minikube.sigs.k8s.io/docs/), `kubectl`, `make` and start the `minikube`
@@ -72,18 +72,18 @@ make
 ```shell
 export INGRESS_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o=jsonpath='{.spec.clusterIP}')
 sudo cat << EOF >> /etc/hosts
-$INGRESS_IP api.cowork.local
-$INGRESS_IP app.cowork.local
-$INGRESS_IP dashboard.cowork.local
+$INGRESS_IP api.editor.local
+$INGRESS_IP app.editor.local
+$INGRESS_IP dashboard.editor.local
 EOF
 ```
 - waiting all pods start, execute to view the pods status
 ```shell
-kubectl get pods -n cowork
+kubectl get pods -n editor
 ```
 open the page
-- [app.cowork.local](http://app.cowork.local)
-- [dashboard.cowork.local](https://dashboard.cowork.local)
+- [app.editor.local](http://app.editor.local)
+- [dashboard.editor.local](https://dashboard.editor.local)
 
 ## Reference
 - [Yjs](https://github.com/yjs/yjs)

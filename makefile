@@ -1,7 +1,7 @@
-GO_PROJECT = cowork-auth cowork-collab cowork-user
-RUST_PROJECT = cowork-doc
-WIRE_PROJECT = cowork-user cowork-collab cowork-auth
-PROTO_PROJECT = cowork-doc/api cowork-user/api
+GO_PROJECT = editor-auth editor-collab editor-user
+RUST_PROJECT = editor-doc
+WIRE_PROJECT = editor-user editor-collab editor-auth
+PROTO_PROJECT = editor-doc/api editor-user/api
 .SILENT: proto
 
 default: all
@@ -16,7 +16,7 @@ test-go:
 
 build-frontend:
 	echo build frontend ; \
-	docker buildx build -f dockerfile-frontend --build-arg APP=cowork-frontend -t cowork-frontend:latest . ; \
+	docker buildx build -f dockerfile-frontend --build-arg APP=editor-frontend -t editor-frontend:latest . ; \
 
 build-go:
 	for p in $(or $(project),$(GO_PROJECT)); do \

@@ -5,4 +5,4 @@ until kubectl get endpoints -n ingress-nginx ingress-nginx-controller-admission 
   sleep 2
 done
 kubectl apply -f k8s/dashboard.yaml,k8s/metrics-server.yaml,k8s/custom-metrics.yaml
-kubectl apply -f k8s/cowork
+kubectl apply -f k8s/editor

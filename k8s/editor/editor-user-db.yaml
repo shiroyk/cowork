@@ -1,0 +1,147 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-user-secret
+  namespace: editor
+data:
+  password: dXNlcjEyMzQ1Ng==
+  root-password: Y293b3JrLXVzZXI=
+  repl_secret: Y293b3JrLXVzZXJAcmVwbA==
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-user-script
+  namespace: editor
+data:
+  init.sh: |
+    set -ex
+    echo 'starting init user db';
+    [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+    ordinal=${BASH_REMATCH[1]}
+    if [[ $ordinal -eq 0 ]]; then
+    cat << EOF >> /docker-entrypoint-initdb.d/init.sql
+    CREATE USER 'repl_user'@'%' IDENTIFIED BY '${REPL_SECRET}';
+    GRANT REPLICATION REPLICA ON *.* TO 'repl_user'@'%';
+    CREATE DATABASE editor_user;
+    CREATE USER '${MARIADB_USER}'@'%' IDENTIFIED BY '${MARIADB_PASSWORD}';
+    GRANT ALL PRIVILEGES ON editor_user.* TO '${MARIADB_USER}'@'%';
+    FLUSH PRIVILEGES;
+    EOF
+    else
+    cat << EOF >> /docker-entrypoint-initdb.d/init.sql
+    CHANGE MASTER TO 
+    MASTER_HOST='$(hostname -f | sed -e "s/[0-9]\./0./")',
+    MASTER_USER='repl_user',
+    MASTER_PASSWORD='${REPL_SECRET}',
+    MASTER_PORT=3306,
+    MASTER_CONNECT_RETRY=10;
+    EOF
+    fi
+    cat /docker-entrypoint-initdb.d/init.sql
+    cat << EOF >> /etc/mysql/conf.d/server-id.cnf
+    [mariadb]
+    log-bin
+    log-basename=editor-user
+    EOF
+    echo server-id=$((3000 + $ordinal)) >> etc/mysql/conf.d/server-id.cnf
+    cat /etc/mysql/conf.d/server-id.cnf
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-user-service
+  namespace: editor
+spec:
+  selector:
+    app: db-user
+  ports:
+    - port: 3306
+      targetPort: 3306
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-user
+  namespace: editor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: db-user
+  serviceName: db-user-service
+  template:
+    metadata:
+      labels:
+        app: db-user
+    spec:
+      initContainers:
+        - name: init-mariadb
+          image: mariadb:10.11
+          imagePullPolicy: Always
+          command:
+            - bash
+            - /tmp/script/init.sh
+          volumeMounts:
+            - name: db-script
+              mountPath: /tmp/script/
+            - name: db-config
+              mountPath: /etc/mysql/conf.d/
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+          env:
+            - name: MARIADB_USER
+              value: user
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-user-secret
+            - name: REPL_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: repl_secret
+                  name: db-user-secret
+      containers:
+        - name: mariadb
+          image: mariadb:10.11
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              memory: 256Mi
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: root-password
+                  name: db-user-secret
+          volumeMounts:
+            - name: db-user-data
+              mountPath: /var/lib/mysql/
+            - name: db-config
+              mountPath: /etc/mysql/conf.d/
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: db-script
+          configMap:
+            name: db-user-script
+        - name: db-config
+          emptyDir: {}
+        - name: initdb
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: db-user-data
+        namespace: editor
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 128Mi

@@ -1,0 +1,25 @@
+[package]
+name = "doc"
+version = "0.0.0"
+edition = "2021"
+
+[[bin]]
+name = "app"
+path = "src/main.rs"
+
+[dependencies]
+log = { version = "0.4.22", features = ["std", "serde"] }
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+actix-web = "4.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_repr = "0.1"
+serde_yaml = "0.8"
+rmp-serde = "1.1.2"
+mongodb = "3"
+bytes = "1.7.1"
+yrs = "0.21"
+tonic = "0.12"
+async-nats = "0.36.0"
+common = { path = "../editor-common" }
+doc-api = { path = "./api" }
+fastrand = "2.1.1"
