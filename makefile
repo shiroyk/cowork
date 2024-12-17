@@ -6,7 +6,7 @@ PROTO_PROJECT = cowork-doc/api cowork-user/api
 
 default: all
 
-all: gen-wire gen-proto build-go build-rust build-frontend
+all: gen-proto build-go build-rust build-frontend
 
 test-go:
 	for p in $(or $(project),$(GO_PROJECT)); do \
@@ -37,7 +37,7 @@ gen-wire:
 	fi; \
 	for p in $(or $(project),$(WIRE_PROJECT)); do \
 		echo wire generate project $$p ; \
-		cd cowork-user && wire && cd ..; \
+		cd $$p && wire && cd ..; \
 	done
 
 gen-proto:
